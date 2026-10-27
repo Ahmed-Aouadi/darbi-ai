@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { BookOpen, BrainCircuit, CalendarDays, Check, ChevronLeft, CircleHelp, Clock3, FileText, GraduationCap, Layers3, Lightbulb, LoaderCircle, Menu, MessageCircle, Sparkles, Target, Upload, X } from 'lucide-react';
+import { BookOpen, BrainCircuit, CalendarDays, Check, ChevronLeft, CircleHelp, Clock3, FileText, GraduationCap, Layers3, Lightbulb, LoaderCircle, Menu, MessageCircle, Sparkles, Target, Upload, X, Download } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import styles from './page.module.css';
@@ -143,10 +143,10 @@ export default function Home() {
         .sort((a, b) => a.index - b.index);
       const glossary = keywords.slice(0, 6).map((term) => {
         const sentence = chunks.find((part) => part.toLocaleLowerCase('ar').includes(term));
-        return sentence ? `• **${term}**: ورد المصطلح في هذا السياق: ${sentence}` : '';
+        return sentence ? `• ${term}: ورد المصطلح في هذا السياق: ${sentence}` : '';
       }).filter(Boolean);
       return 'شرح منظّم اعتمادًا على محتوى الدرس\\n\\n' +
-        '**الفكرة المحورية**\\n' + (keySentences[0]?.sentence || clean.slice(0, 300)) +
+        'الفكرة المحورية\\n' + (keySentences[0]?.sentence || clean.slice(0, 300)) +
         '\\n\\n**الأفكار بالترتيب**\\n' + keySentences.map(({ sentence }, i) => `${i + 1}. ${sentence}`).join('\\n\\n') +
         (glossary.length ? '\\n\\n**مصطلحات من النص وسياقها**\\n' + glossary.join('\\n\\n') : '') +
         '\\n\\n**اختبر فهمك بنفسك**\\n1. ما الفكرة الرئيسية دون النظر إلى النص؟\\n2. ما المصطلحان الأكثر أهمية، وكيف يرتبطان ببعضهما؟\\n3. اذكر معلومة واحدة تحتاج إلى مراجعتها.';
@@ -156,7 +156,7 @@ export default function Home() {
     }
     const cards = buildFlashcards(source);
     return 'بطاقات المراجعة\\n\\n' + cards.map((card, i) =>
-      `**البطاقة ${i + 1}**\\nالسؤال: ${card.question}\\nالإجابة: ${card.answer}`
+      `البطاقة ${i + 1}\\nالسؤال: ${card.question}\\nالإجابة: ${card.answer}`
     ).join('\\n\\n────────────\\n\\n');
   }
 
@@ -226,6 +226,45 @@ export default function Home() {
     return cards;
   }
 
+  function getResultContent(current: Result): string {
+    if (current.text) return current.text;
+    if (current.quiz?.length) {
+      return current.title + '\\n\\n' + current.quiz.map((question, index) =>
+        `السؤال ${index + 1}: ${question.question}\\nالخيارات: ${question.options.join(' / ')}\\nالإجابة الصحيحة: ${question.options[question.answer]}\\nالتفسير: ${question.explanation}`
+      ).join('\\n\\n');
+    }
+    if (current.cards?.length) {
+      return current.title + '\\n\\n' + current.cards.map((card, index) =>
+        `البطاقة ${index + 1}\\nالسؤال: ${card.question}\\nالإجابة: ${card.answer}`
+      ).join('\\n\\n────────────\\n\\n');
+    }
+    return current.title;
+  }
+
+  async function copyResult() {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(getResultContent(result));
+      setError('تم نسخ النتيجة كاملة إلى الحافظة.');
+    } catch {
+      setError('تعذر النسخ تلقائيًا. حدّد النتيجة وانسخها يدويًا.');
+    }
+  }
+
+  function downloadResult() {
+    if (!result) return;
+    const blob = new Blob([getResultContent(result)], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `darbi-${result.task}-${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setError('جهّزت ملف النتيجة للتنزيل.');
+  }
+
   async function runTask(task: Task) {
     setActiveTask(task); setError('');
     if (lesson.trim().length < 30) { setError('أضف نص الدرس أو ارفع ملفًا أولًا (30 حرفًا على الأقل).'); return; }
@@ -285,7 +324,7 @@ export default function Home() {
 
         {result && <section className={styles.resultCard} aria-live="polite">
           <div className={styles.resultHeader}><div className={styles.resultBadge}><Sparkles size={17}/></div><div><h3>{result.title}</h3><p>{result.task === 'quiz' ? 'أجب عن الأسئلة ثم اعرض التصحيح' : result.task === 'flashcards' ? 'اقلب البطاقة لتكشف الإجابة' : 'تم الإنشاء اعتمادًا على نص درسك'}</p></div>
-          {result.text && <button className={styles.copyButton} onClick={() => navigator.clipboard?.writeText(result.text).then(() => setError('تم نسخ النتيجة إلى الحافظة.')).catch(() => setError('تعذر النسخ تلقائيًا؛ حدّد النص وانسخه.'))}>نسخ النتيجة</button>}
+          <div className={styles.resultActions}><button className={styles.copyButton} onClick={copyResult}>نسخ النتيجة</button><button className={styles.copyButton} onClick={downloadResult}><Download size={13} style={{verticalAlign:'middle',marginLeft:5}}/>تنزيل TXT</button></div>
           </div>
           {result.task === 'quiz' && result.quiz && <div className={styles.quizArea}>
             <div className={styles.quizSummary}><span>اختبار قصير</span><b>{Object.keys(quizAnswers).length} / {result.quiz.length} إجابات</b></div>

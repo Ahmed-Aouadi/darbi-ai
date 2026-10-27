@@ -90,19 +90,19 @@ export default function Home() {
 
   function splitLesson(source: string): string[] {
     return source
-      .replace(/\\r/g, '\\n')
-      .replace(/[\\t ]+/g, ' ')
-      .split(/(?<=[.!؟?؛])\\s+|\\n+/)
-      .map((part) => part.trim().replace(/^[-•*\\d.\\s]+/, ''))
-      .filter((part) => part.length > 18 && part.split(/\\s+/).length >= 4);
+      .replace(/\r/g, '\n')
+      .replace(/[\t ]+/g, ' ')
+      .split(/(?<=[.!؟?؛])\s+|\n+/)
+      .map((part) => part.trim().replace(/^[-•*\d.\s]+/, ''))
+      .filter((part) => part.length > 18 && part.split(/\s+/).length >= 4);
   }
 
   function getKeywords(source: string): string[] {
-    const tokens = source.match(/[\\p{L}\\p{N}]{3,}/gu) || [];
+    const tokens = source.match(/[\p{L}\p{N}]{3,}/gu) || [];
     const frequency = new Map<string, number>();
     tokens.forEach((token) => {
       const word = token.toLocaleLowerCase('ar');
-      if (stopWords.has(word) || /^\\d+$/.test(word)) return;
+      if (stopWords.has(word) || /^\d+$/.test(word)) return;
       frequency.set(word, (frequency.get(word) || 0) + 1);
     });
     return [...frequency.entries()]
@@ -112,14 +112,14 @@ export default function Home() {
 
   function sentenceScore(sentence: string, keywords: string[]): number {
     const normalized = sentence.toLocaleLowerCase('ar');
-    const words = normalized.match(/[\\p{L}\\p{N}]{3,}/gu) || [];
+    const words = normalized.match(/[\p{L}\p{N}]{3,}/gu) || [];
     const unique = new Set(words.filter((word) => !stopWords.has(word)));
     const keywordHits = keywords.filter((word) => normalized.includes(word)).length;
     return keywordHits * 3 + Math.min(unique.size, 8) + Math.min(sentence.length / 120, 2);
   }
 
   function makeLocalResult(task: Task, source: string): string {
-    const clean = source.replace(/\\s+/g, ' ').trim();
+    const clean = source.replace(/\s+/g, ' ').trim();
     const chunks = splitLesson(source);
     const keywords = getKeywords(source);
     if (task === 'summary') {
@@ -129,10 +129,10 @@ export default function Home() {
         .sort((a, b) => b.score - a.score || a.index - b.index)
         .slice(0, Math.min(6, Math.max(3, Math.ceil(chunks.length * 0.4))))
         .sort((a, b) => a.index - b.index);
-      return 'ملخص مستخرج من نص الدرس\\n\\n' +
-        ranked.map(({ sentence }, i) => `• ${sentence}`).join('\\n\\n') +
-        (keywords.length ? '\\n\\n**مصطلحات أساسية في النص:** ' + keywords.slice(0, 8).join('، ') : '') +
-        '\\n\\n**للتأكد من الفهم:** حاول تلخيص الدرس في جملتين من ذاكرتك، ثم قارن إجابتك بالنقاط أعلاه.';
+      return 'ملخص مستخرج من نص الدرس\n\n' +
+        ranked.map(({ sentence }, i) => `• ${sentence}`).join('\n\n') +
+        (keywords.length ? '\n\nمصطلحات أساسية في النص: ' + keywords.slice(0, 8).join('، ') : '') +
+        '\n\nللتأكد من الفهم: حاول تلخيص الدرس في جملتين من ذاكرتك، ثم قارن إجابتك بالنقاط أعلاه.';
     }
     if (task === 'explain') {
       if (!chunks.length) return clean;
@@ -145,19 +145,19 @@ export default function Home() {
         const sentence = chunks.find((part) => part.toLocaleLowerCase('ar').includes(term));
         return sentence ? `• ${term}: ورد المصطلح في هذا السياق: ${sentence}` : '';
       }).filter(Boolean);
-      return 'شرح منظّم اعتمادًا على محتوى الدرس\\n\\n' +
-        'الفكرة المحورية\\n' + (keySentences[0]?.sentence || clean.slice(0, 300)) +
-        '\\n\\n**الأفكار بالترتيب**\\n' + keySentences.map(({ sentence }, i) => `${i + 1}. ${sentence}`).join('\\n\\n') +
-        (glossary.length ? '\\n\\n**مصطلحات من النص وسياقها**\\n' + glossary.join('\\n\\n') : '') +
-        '\\n\\n**اختبر فهمك بنفسك**\\n1. ما الفكرة الرئيسية دون النظر إلى النص؟\\n2. ما المصطلحان الأكثر أهمية، وكيف يرتبطان ببعضهما؟\\n3. اذكر معلومة واحدة تحتاج إلى مراجعتها.';
+      return 'شرح منظّم اعتمادًا على محتوى الدرس\n\n' +
+        'الفكرة المحورية\n' + (keySentences[0]?.sentence || clean.slice(0, 300)) +
+        '\n\nالأفكار بالترتيب\n' + keySentences.map(({ sentence }, i) => `${i + 1}. ${sentence}`).join('\n\n') +
+        (glossary.length ? '\n\nمصطلحات من النص وسياقها\n' + glossary.join('\n\n') : '') +
+        '\n\nاختبر فهمك بنفسك\n1. ما الفكرة الرئيسية دون النظر إلى النص؟\n2. ما المصطلحان الأكثر أهمية، وكيف يرتبطان ببعضهما؟\n3. اذكر معلومة واحدة تحتاج إلى مراجعتها.';
     }
     if (task === 'quiz') {
       return 'أنشئ اختبارًا تفاعليًا من النص، ثم أجب عن الأسئلة في قسم الاختبار أدناه.';
     }
     const cards = buildFlashcards(source);
-    return 'بطاقات المراجعة\\n\\n' + cards.map((card, i) =>
-      `البطاقة ${i + 1}\\nالسؤال: ${card.question}\\nالإجابة: ${card.answer}`
-    ).join('\\n\\n────────────\\n\\n');
+    return 'بطاقات المراجعة\n\n' + cards.map((card, i) =>
+      `البطاقة ${i + 1}\nالسؤال: ${card.question}\nالإجابة: ${card.answer}`
+    ).join('\n\n────────────\n\n');
   }
 
   function buildQuiz(source: string): QuizQuestion[] {
@@ -229,14 +229,14 @@ export default function Home() {
   function getResultContent(current: Result): string {
     if (current.text) return current.text;
     if (current.quiz?.length) {
-      return current.title + '\\n\\n' + current.quiz.map((question, index) =>
-        `السؤال ${index + 1}: ${question.question}\\nالخيارات: ${question.options.join(' / ')}\\nالإجابة الصحيحة: ${question.options[question.answer]}\\nالتفسير: ${question.explanation}`
-      ).join('\\n\\n');
+      return current.title + '\n\n' + current.quiz.map((question, index) =>
+        `السؤال ${index + 1}: ${question.question}\nالخيارات: ${question.options.join(' / ')}\nالإجابة الصحيحة: ${question.options[question.answer]}\nالتفسير: ${question.explanation}`
+      ).join('\n\n');
     }
     if (current.cards?.length) {
-      return current.title + '\\n\\n' + current.cards.map((card, index) =>
-        `البطاقة ${index + 1}\\nالسؤال: ${card.question}\\nالإجابة: ${card.answer}`
-      ).join('\\n\\n────────────\\n\\n');
+      return current.title + '\n\n' + current.cards.map((card, index) =>
+        `البطاقة ${index + 1}\nالسؤال: ${card.question}\nالإجابة: ${card.answer}`
+      ).join('\n\n────────────\n\n');
     }
     return current.title;
   }

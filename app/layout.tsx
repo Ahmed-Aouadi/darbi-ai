@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'سوقي — كتالوجك التجاري في مكان واحد',
-  description: 'أنشئ كتالوج منتجاتك، نظّم الأسعار والمخزون، واستقبل طلبات زبائنك عبر واتساب.',
-  applicationName: 'سوقي',
-  keywords: ['كتالوج منتجات', 'إدارة متجر', 'مشاريع صغيرة', 'بيع عبر واتساب', 'تجارة إلكترونية'],
+  title: 'ملف 404 — غرفة التحقيق',
+  description: 'افحص الأدلة، استجوب المشتبه بهم، واكشف الحقيقة في قضايا غامضة تفاعلية.',
+  applicationName: 'ملف 404',
+  keywords: ['ألغاز', 'تحقيق', 'قضايا غامضة', 'ألعاب ذكاء', 'غرفة التحقيق'],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

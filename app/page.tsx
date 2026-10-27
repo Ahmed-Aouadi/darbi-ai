@@ -2,244 +2,261 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AlarmClock, ArrowLeft, ArrowUpLeft, BookOpen, Check, CheckCheck,
-  ChevronLeft, CircleHelp, Coffee, Flame, Leaf, ListTodo, Pause,
-  Play, Plus, RotateCcw, Sparkles, Target, Timer, Trophy, X, Zap
+  ArrowDownLeft, ArrowUpLeft, BadgePercent, Box, Check, ChevronDown, CirclePlus,
+  ClipboardList, ExternalLink, Eye, Heart, LayoutGrid, MessageCircle, Package,
+  Plus, Search, Settings2, Share2, ShoppingBag, SlidersHorizontal, Sparkles,
+  Store, Trash2, TrendingUp, X
 } from 'lucide-react';
 import styles from './page.module.css';
 
-type StudyTask = { id: string; title: string; subject: string; minutes: number; done: boolean };
-type TimerMode = 'focus' | 'break';
+type Product = {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  stock: number;
+  emoji: string;
+  tone: string;
+  description: string;
+};
 
-const initialTasks: StudyTask[] = [
-  { id: 't1', title: 'مراجعة درس الدوال', subject: 'رياضيات', minutes: 25, done: false },
-  { id: 't2', title: 'حل 5 تمارين تطبيقية', subject: 'رياضيات', minutes: 20, done: false },
-  { id: 't3', title: 'تلخيص درس المناعة', subject: 'علوم الطبيعة', minutes: 20, done: false },
-  { id: 't4', title: 'مراجعة المصطلحات', subject: 'لغة عربية', minutes: 15, done: true },
+const starterProducts: Product[] = [
+  { id: 'p1', name: 'كوب سيراميك أنيق', category: 'هدايا', price: 850, stock: 12, emoji: '☕', tone: 'cream', description: 'كوب أنيق مناسب للاستخدام اليومي والهدايا.' },
+  { id: 'p2', name: 'حقيبة يومية', category: 'إكسسوارات', price: 2400, stock: 7, emoji: '👜', tone: 'pink', description: 'حقيبة عملية بتصميم بسيط يناسب كل يوم.' },
+  { id: 'p3', name: 'علبة هدايا مميزة', category: 'هدايا', price: 1600, stock: 4, emoji: '🎁', tone: 'lilac', description: 'علبة هدايا بتنسيق جميل للمناسبات الخاصة.' },
+  { id: 'p4', name: 'دفتر بتصميم عصري', category: 'قرطاسية', price: 650, stock: 18, emoji: '📒', tone: 'mint', description: 'دفتر أنيق لتدوين الأفكار والملاحظات.' },
+  { id: 'p5', name: 'سوار بسيط', category: 'إكسسوارات', price: 500, stock: 2, emoji: '📿', tone: 'peach', description: 'قطعة خفيفة تضيف لمسة لطيفة إلى إطلالتك.' },
+  { id: 'p6', name: 'باقة ورد صناعي', category: 'ديكور', price: 1900, stock: 0, emoji: '💐', tone: 'blue', description: 'باقة ديكور جميلة لتزيين المنزل أو المكتب.' },
 ];
 
-const weekdays = [
-  { short: 'س', label: 'السبت', value: 0 },
-  { short: 'أ', label: 'الأحد', value: 1 },
-  { short: 'إ', label: 'الإثنين', value: 2 },
-  { short: 'ث', label: 'الثلاثاء', value: 3 },
-  { short: 'أ', label: 'الأربعاء', value: 4 },
-  { short: 'خ', label: 'الخميس', value: 5 },
-  { short: 'ج', label: 'الجمعة', value: 6 },
-];
-
-function formatTime(totalSeconds: number) {
-  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-  return minutes + ':' + seconds;
-}
+const categories = ['الكل', 'هدايا', 'إكسسوارات', 'قرطاسية', 'ديكور'];
+const money = (amount: number) => new Intl.NumberFormat('ar-DZ').format(amount) + ' دج';
 
 export default function Home() {
-  const [tasks, setTasks] = useState<StudyTask[]>(initialTasks);
-  const [sessions, setSessions] = useState(0);
-  const [mode, setMode] = useState<TimerMode>('focus');
-  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
-  const [running, setRunning] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState('t1');
-  const [newTask, setNewTask] = useState('');
-  const [newSubject, setNewSubject] = useState('دراسة عامة');
-  const [showAddTask, setShowAddTask] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [notice, setNotice] = useState('');
-
-  const today = new Date();
-  const dateLabel = new Intl.DateTimeFormat('ar-DZ', { weekday: 'long', day: 'numeric', month: 'long' }).format(today);
-  const greeting = today.getHours() < 12 ? 'صباح الخير' : today.getHours() < 18 ? 'مساء النشاط' : 'مساء الإنجاز';
-  const doneCount = tasks.filter((task) => task.done).length;
-  const progress = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
-  const selectedTask = tasks.find((task) => task.id === selectedTaskId && !task.done) || tasks.find((task) => !task.done);
-  const timerTotal = mode === 'focus' ? 25 * 60 : 5 * 60;
-  const timerProgress = Math.max(0, Math.min(100, (secondsLeft / timerTotal) * 100));
-  const todayIndex = (today.getDay() + 1) % 7;
-  const weekly = useMemo(() => weekdays.map((day, index) => ({ ...day, today: index === todayIndex, complete: false })), [todayIndex]);
+  const [products, setProducts] = useState<Product[]>(starterProducts);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('الكل');
+  const [showForm, setShowForm] = useState(false);
+  const [toast, setToast] = useState('');
+  const [shopName, setShopName] = useState('متجري الصغير');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: '', category: 'هدايا', price: '', stock: '', emoji: '🎁', description: '' });
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('minjaz-dashboard-v1');
-      if (saved) {
-        const data = JSON.parse(saved);
-        if (Array.isArray(data.tasks)) setTasks(data.tasks);
-        if (Number.isFinite(data.sessions)) setSessions(data.sessions);
-      }
-    } catch { /* Keep the default plan if local storage is unavailable. */ }
-    finally { setLoaded(true); }
+      const saved = localStorage.getItem('souqi-products');
+      const savedName = localStorage.getItem('souqi-shop-name');
+      const savedWhatsapp = localStorage.getItem('souqi-whatsapp');
+      if (saved) setProducts(JSON.parse(saved));
+      if (savedName) setShopName(savedName);
+      if (savedWhatsapp) setWhatsapp(savedWhatsapp);
+    } catch {}
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
-    try { localStorage.setItem('minjaz-dashboard-v1', JSON.stringify({ tasks, sessions })); }
-    catch { /* The app remains usable without persistence. */ }
-  }, [tasks, sessions, loaded]);
+    try { localStorage.setItem('souqi-products', JSON.stringify(products)); } catch {}
+  }, [products]);
 
   useEffect(() => {
-    if (!running || secondsLeft <= 0) return;
-    const interval = window.setInterval(() => {
-      setSecondsLeft((current) => Math.max(0, current - 1));
-    }, 1000);
-    return () => window.clearInterval(interval);
-  }, [running, secondsLeft]);
+    try {
+      localStorage.setItem('souqi-shop-name', shopName);
+      localStorage.setItem('souqi-whatsapp', whatsapp);
+    } catch {}
+  }, [shopName, whatsapp]);
 
   useEffect(() => {
-    if (!running || secondsLeft !== 0) return;
-    setRunning(false);
-    if (mode === 'focus') {
-      setSessions((count) => count + 1);
-      setNotice('أحسنت! انتهت جلسة تركيز. خذ نفسًا عميقًا قبل المتابعة.');
-    } else {
-      setNotice('انتهت الاستراحة. أنت جاهز لجولة جديدة.');
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(''), 2800);
+    return () => window.clearTimeout(id);
+  }, [toast]);
+
+  const visibleProducts = useMemo(() => products.filter((p) => {
+    const matchesSearch = (p.name + ' ' + p.category).toLowerCase().includes(search.toLowerCase());
+    return matchesSearch && (category === 'الكل' || p.category === category);
+  }), [products, search, category]);
+
+  const totalValue = products.reduce((sum, p) => sum + p.price * p.stock, 0);
+  const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 3).length;
+  const inStock = products.filter((p) => p.stock > 0).length;
+
+  const addProduct = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!newProduct.name.trim() || !newProduct.price || Number(newProduct.price) < 0) {
+      setToast('أدخل اسم المنتج وسعرًا صحيحًا أولًا');
+      return;
     }
-  }, [secondsLeft, running, mode]);
-
-  function changeMode(nextMode: TimerMode) {
-    setRunning(false);
-    setMode(nextMode);
-    setSecondsLeft(nextMode === 'focus' ? 25 * 60 : 5 * 60);
-    setNotice('');
-  }
-
-  function resetTimer() {
-    setRunning(false);
-    setSecondsLeft(timerTotal);
-    setNotice('');
-  }
-
-  function addTask() {
-    const title = newTask.trim();
-    if (!title) return;
-    const task: StudyTask = {
-      id: `task-${Date.now()}`, title, subject: newSubject.trim() || 'دراسة عامة', minutes: 25, done: false,
+    const product: Product = {
+      id: Date.now().toString(),
+      name: newProduct.name.trim(),
+      category: newProduct.category,
+      price: Number(newProduct.price),
+      stock: Math.max(0, Number(newProduct.stock) || 0),
+      emoji: newProduct.emoji || '📦',
+      tone: ['cream', 'pink', 'lilac', 'mint', 'peach', 'blue'][products.length % 6],
+      description: newProduct.description.trim() || 'منتج جديد من متجرنا.',
     };
-    setTasks((current) => [...current, task]);
-    setSelectedTaskId(task.id);
-    setNewTask('');
-    setShowAddTask(false);
-    setNotice('أُضيفت المهمة إلى خطتك. خطوة صغيرة تكفي للبداية.');
-  }
+    setProducts((current) => [product, ...current]);
+    setNewProduct({ name: '', category: 'هدايا', price: '', stock: '', emoji: '🎁', description: '' });
+    setShowForm(false);
+    setToast('تمت إضافة المنتج إلى كتالوجك');
+  };
 
-  function toggleTask(id: string) {
-    setTasks((current) => current.map((task) => task.id === id ? { ...task, done: !task.done } : task));
-    setNotice('');
-  }
+  const orderProduct = (product: Product) => {
+    if (!whatsapp.trim()) {
+      setShowSettings(true);
+      setToast('أضف رقم واتساب المتجر لاستقبال الطلبات');
+      return;
+    }
+    const number = whatsapp.replace(/[^0-9]/g, '');
+    const message = encodeURIComponent('السلام عليكم، أريد طلب: ' + product.name + ' — السعر ' + money(product.price));
+    window.open('https://wa.me/' + number + '?text=' + message, '_blank', 'noopener,noreferrer');
+  };
 
-  function selectTask(task: StudyTask) {
-    if (task.done) return;
-    setSelectedTaskId(task.id);
-    setMode('focus');
-    setRunning(false);
-    setSecondsLeft(25 * 60);
-    setNotice(`الجلسة التالية: ${task.title}`);
-  }
+  const shareShop = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setToast('تم نسخ رابط الصفحة الحالية');
+    } catch {
+      setToast('انسخ رابط الموقع من شريط المتصفح لمشاركته');
+    }
+  };
 
   return (
-    <main className={styles.page}>
+    <main className={styles.app}>
       <aside className={styles.sidebar}>
-        <a className={styles.brand} href="#home" aria-label="منجز - الرئيسية">
-          <span className={styles.brandMark}><Zap size={22} fill="currentColor" /></span>
-          <span><strong>مِنجَز</strong><small>خطوات صغيرة، نتائج كبيرة</small></span>
-        </a>
-        <div className={styles.sideCaption}>مساحة العمل</div>
-        <a className={`${styles.sideLink} ${styles.sideLinkActive}`} href="#home"><span><Target size={18}/></span> لوحة اليوم</a>
-        <a className={styles.sideLink} href="#tasks"><span><ListTodo size={18}/></span> مهامي الدراسية <i>{tasks.filter((task) => !task.done).length}</i></a>
-        <a className={styles.sideLink} href="#focus"><span><Timer size={18}/></span> جلسة التركيز</a>
-        <a className={styles.sideLink} href="#progress"><span><Trophy size={18}/></span> تقدّمي</a>
-        <div className={styles.sidebarQuote}>
-          <span className={styles.quoteIcon}><Leaf size={19}/></span>
-          <strong>لا تنتظر الحماس</strong>
-          <p>ابدأ بخمس دقائق فقط. غالبًا ما تأتي الرغبة في الاستمرار بعد البداية.</p>
-          <span className={styles.quoteTag}>تذكير اليوم</span>
+        <div className={styles.brand}>
+          <div className={styles.brandIcon}><Store size={23} /></div>
+          <div><strong>سوقي</strong><span>متجرك، بطريقتك</span></div>
         </div>
-        <div className={styles.sideBottom}><span className={styles.localDot}/> بياناتك محفوظة على جهازك</div>
+        <div className={styles.sideLabel}>مساحة العمل</div>
+        <button className={styles.navActive}><LayoutGrid size={18} /> نظرة عامة</button>
+        <button className={styles.navItem} onClick={() => document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' })}><Package size={18} /> المنتجات <span className={styles.navCount}>{products.length}</span></button>
+        <button className={styles.navItem} onClick={() => setShowSettings(true)}><Settings2 size={18} /> إعدادات المتجر</button>
+        <div className={styles.sideSpacer} />
+        <div className={styles.helpCard}>
+          <div className={styles.helpIcon}><Sparkles size={18} /></div>
+          <strong>متجرك يبدأ بخطوة</strong>
+          <p>أضف منتجاتك وشاركها مع زبائنك بسهولة.</p>
+          <button onClick={() => setShowForm(true)}>أضف أول منتج <ArrowUpLeft size={15} /></button>
+        </div>
+        <div className={styles.sidebarFoot}><span className={styles.onlineDot} /> بياناتك محفوظة على هذا الجهاز</div>
       </aside>
 
-      <section className={styles.main} id="home">
+      <section className={styles.main}>
         <header className={styles.topbar}>
-          <div className={styles.mobileBrand}><span className={styles.brandMark}><Zap size={18} fill="currentColor"/></span><strong>مِنجَز</strong></div>
-          <div className={styles.dateLine}><span className={styles.dateIcon}><AlarmClock size={16}/></span>{dateLabel}</div>
-          <button className={styles.profileButton} onClick={() => setNotice('أنت تستخدم مساحة دراسة شخصية. لا تحتاج إلى إنشاء حساب للبدء.')} aria-label="معلومات الحساب"><span className={styles.profileAvatar}>ط</span><span>مساحتي</span><ChevronLeft size={15}/></button>
+          <div className={styles.breadcrumb}><span>مساحة العمل</span><span className={styles.crumbSlash}>/</span><strong>نظرة عامة</strong></div>
+          <div className={styles.topActions}>
+            <button className={styles.outlineButton} onClick={() => setShowSettings(true)}><Settings2 size={16} /> إعدادات المتجر</button>
+            <button className={styles.primaryButton} onClick={() => setShowForm(true)}><Plus size={17} /> إضافة منتج</button>
+          </div>
         </header>
 
         <div className={styles.content}>
           <section className={styles.welcome}>
             <div className={styles.welcomeCopy}>
-              <span className={styles.eyebrow}><Sparkles size={15}/> خطتك الدراسية تبدأ هنا</span>
-              <h1>{greeting}، <span>أنت قادر عليها.</span></h1>
-              <p>لا تحتاج إلى إنهاء كل شيء اليوم. اختر مهمة واحدة وامنحها تركيزك الكامل.</p>
-              <a className={styles.welcomeCta} href="#focus">ابدأ جلسة تركيز <ArrowLeft size={16}/></a>
+              <div className={styles.eyebrow}><Sparkles size={14} /> مساحة تجارتك الصغيرة</div>
+              <h1>أهلًا بك في <span>{shopName || 'متجري الصغير'}</span> 👋</h1>
+              <p>رتّب منتجاتك، تابع مخزونك، واجعل طلبات زبائنك أقرب إليك.</p>
+              <div className={styles.welcomeButtons}>
+                <button className={styles.lightButton} onClick={() => setShowForm(true)}><CirclePlus size={17} /> أضف منتجًا جديدًا</button>
+                <button className={styles.textButton} onClick={shareShop}><Share2 size={16} /> مشاركة الصفحة</button>
+              </div>
             </div>
-            <div className={styles.welcomeArt} aria-hidden="true">
-              <div className={styles.artSun}/><div className={styles.artBlob}/>
-              <div className={styles.artBook}><BookOpen size={43}/><span>25</span></div>
-              <span className={styles.artStar}><Sparkles size={19}/></span>
-              <span className={styles.artPill}><Check size={13}/> خطوة اليوم</span>
+            <div className={styles.heroArt}>
+              <div className={styles.heroCircle}><ShoppingBag size={55} strokeWidth={1.4} /></div>
+              <span className={styles.floatTag}><Check size={14} /> متجرك جاهز</span>
+              <span className={styles.floatSpark}>✦</span>
+              <span className={styles.floatDot} />
             </div>
           </section>
 
-          <section className={styles.statsGrid} aria-label="ملخص التقدم">
-            <article className={styles.statCard}><span className={`${styles.statIcon} ${styles.statViolet}`}><CheckCheck size={19}/></span><div><small>المهام المنجزة</small><strong>{doneCount}<em> / {tasks.length}</em></strong></div><span className={styles.statFoot}>{progress}% من الخطة</span></article>
-            <article className={styles.statCard}><span className={`${styles.statIcon} ${styles.statOrange}`}><Flame size={19}/></span><div><small>جلسات التركيز</small><strong>{sessions}<em> جلسة</em></strong></div><span className={styles.statFoot}>كل جلسة تصنع فرقًا</span></article>
-            <article className={styles.statCard}><span className={`${styles.statIcon} ${styles.statGreen}`}><Target size={19}/></span><div><small>نسبة إنجاز اليوم</small><strong>{progress}<em>%</em></strong></div><span className={styles.statFoot}>{progress === 100 ? 'رائع! أكملت خطتك' : 'تقدّمك يتراكم'}</span></article>
+          <section className={styles.stats}>
+            <article className={styles.statCard}>
+              <div className={styles.statTop}><span>إجمالي المنتجات</span><div className={styles.statIcon + ' ' + styles.purple}><Package size={19} /></div></div>
+              <div className={styles.statValue}>{products.length}<small>منتج</small></div>
+              <div className={styles.statFoot}><span className={styles.statPositive}><TrendingUp size={13} /> كتالوجك</span><span>عدد المنتجات المضافة</span></div>
+            </article>
+            <article className={styles.statCard}>
+              <div className={styles.statTop}><span>منتجات متوفرة</span><div className={styles.statIcon + ' ' + styles.green}><Box size={19} /></div></div>
+              <div className={styles.statValue}>{inStock}<small>منتج</small></div>
+              <div className={styles.statFoot}><span className={styles.greenText}>متاح للبيع</span><span>من أصل {products.length}</span></div>
+            </article>
+            <article className={styles.statCard}>
+              <div className={styles.statTop}><span>مخزون منخفض</span><div className={styles.statIcon + ' ' + styles.orange}><BadgePercent size={19} /></div></div>
+              <div className={styles.statValue}>{lowStock}<small>منتج</small></div>
+              <div className={styles.statFoot}><span className={lowStock ? styles.orangeText : styles.greenText}>{lowStock ? 'يحتاج إلى انتباه' : 'كل شيء جيد'}</span><span>3 قطع أو أقل</span></div>
+            </article>
+            <article className={styles.statCard}>
+              <div className={styles.statTop}><span>قيمة المخزون</span><div className={styles.statIcon + ' ' + styles.blue}><TrendingUp size={19} /></div></div>
+              <div className={styles.statValue + ' ' + styles.moneyValue}>{money(totalValue)}</div>
+              <div className={styles.statFoot}><span>تقدير تقريبي</span><span>السعر × الكمية</span></div>
+            </article>
           </section>
 
-          <div className={styles.columns}>
-            <div className={styles.leftColumn}>
-              <section className={styles.panel} id="focus">
-                <div className={styles.panelHeader}><div><span className={styles.panelKicker}>مساحة التركيز</span><h2>جلسة واحدة تغيّر يومك</h2></div><span className={styles.liveBadge}><i/> {running ? 'الجلسة جارية' : 'جاهز للبدء'}</span></div>
-                <div className={styles.timerModes}>
-                  <button className={mode === 'focus' ? styles.modeActive : ''} onClick={() => changeMode('focus')}><Target size={15}/> تركيز <small>25 د</small></button>
-                  <button className={mode === 'break' ? styles.modeActive : ''} onClick={() => changeMode('break')}><Coffee size={15}/> استراحة <small>5 د</small></button>
-                </div>
-                <div className={styles.timerStage}>
-                  <div className={styles.timerRing} style={{ background: `conic-gradient(var(--accent) ${timerProgress * 3.6}deg, #eeedf6 0deg)` }}>
-                    <div className={styles.timerInner}><span className={styles.timerLabel}>{mode === 'focus' ? 'وقت التركيز' : 'وقت الراحة'}</span><strong>{formatTime(secondsLeft)}</strong><span className={styles.timerSub}>{running ? 'أبعد المشتتات' : 'خذ نفسًا وابدأ'}</span></div>
-                  </div>
-                  <div className={styles.timerTask}><span className={styles.timerTaskIcon}><BookOpen size={17}/></span><div><small>المهمة الحالية</small><strong>{mode === 'break' ? 'استرح قليلًا' : selectedTask?.title || 'اختر مهمة من القائمة'}</strong><span>{mode === 'break' ? 'ابتعد عن الشاشة إن استطعت' : selectedTask?.subject || 'أضف مهمة جديدة للبدء'}</span></div></div>
-                </div>
-                <div className={styles.timerControls}>
-                  <button className={styles.resetButton} onClick={resetTimer} aria-label="إعادة ضبط المؤقت"><RotateCcw size={17}/></button>
-                  <button className={styles.startButton} onClick={() => { if (secondsLeft === 0) setSecondsLeft(timerTotal); setRunning((value) => !value); setNotice(''); }}><span>{running ? <Pause size={17} fill="currentColor"/> : <Play size={17} fill="currentColor"/>}</span>{running ? 'إيقاف مؤقت' : secondsLeft === 0 ? 'ابدأ من جديد' : 'ابدأ التركيز'}</button>
-                  <button className={styles.skipButton} onClick={() => changeMode(mode === 'focus' ? 'break' : 'focus')} aria-label="تبديل وضع المؤقت"><ArrowUpLeft size={18}/></button>
-                </div>
-                <p className={styles.timerHint}><span><Sparkles size={14}/></span> نصيحة: أغلق الإشعارات وحدّد هدفًا واحدًا قبل أن تبدأ.</p>
-              </section>
-
-              <section className={styles.panel} id="progress">
-                <div className={styles.panelHeader}><div><span className={styles.panelKicker}>استمرارية هادئة</span><h2>رحلتك هذا الأسبوع</h2></div><span className={styles.weekTag}>هذا الأسبوع</span></div>
-                <div className={styles.weekRow}>{weekly.map((day) => <div key={day.value} className={styles.weekDay}><span className={day.today ? styles.weekToday : day.complete ? styles.weekDone : ''}>{day.complete ? <Check size={15}/> : day.short}</span><small>{day.label}</small>{day.today && <i/>}</div>)}</div>
-                <div className={styles.weekNote}><span className={styles.weekNoteIcon}><Trophy size={17}/></span><p><strong>التقدّم أهم من الكمال.</strong><br/>كل مرة تعود فيها إلى خطتك، فأنت تبني عادة أقوى.</p><span className={styles.weekDecoration}>✳</span></div>
-              </section>
+          <section className={styles.catalog} id="catalog">
+            <div className={styles.catalogHeader}>
+              <div><h2>منتجاتك</h2><p>إدارة بسيطة لكل ما تعرضه للبيع</p></div>
+              <button className={styles.primaryButton} onClick={() => setShowForm(true)}><Plus size={16} /> إضافة منتج</button>
+            </div>
+            <div className={styles.toolbar}>
+              <div className={styles.searchBox}><Search size={17} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث عن منتج أو تصنيف..." /><SlidersHorizontal size={16} /></div>
+              <div className={styles.categoryTabs}>
+                {categories.map((item) => <button key={item} className={category === item ? styles.categoryActive : ''} onClick={() => setCategory(item)}>{item}</button>)}
+              </div>
             </div>
 
-            <div className={styles.rightColumn}>
-              <section className={styles.panel} id="tasks">
-                <div className={styles.panelHeader}><div><span className={styles.panelKicker}>قائمة اليوم</span><h2>ماذا ستنجز اليوم؟</h2></div><span className={styles.taskCount}>{doneCount}/{tasks.length}</span></div>
-                <div className={styles.taskProgress}><span style={{ width: `${progress}%` }}/></div>
-                <div className={styles.taskList}>
-                  {tasks.map((task) => <article key={task.id} className={`${styles.taskRow} ${task.done ? styles.taskDone : ''} ${selectedTask?.id === task.id ? styles.taskSelected : ''}`}>
-                    <button className={styles.taskCheck} onClick={() => toggleTask(task.id)} aria-label={task.done ? 'إلغاء إنجاز المهمة' : 'إنجاز المهمة'}>{task.done && <Check size={15}/>}</button>
-                    <button className={styles.taskInfo} onClick={() => selectTask(task)} disabled={task.done}><strong>{task.title}</strong><span><i>{task.subject}</i><i><Timer size={12}/>{task.minutes} د</i></span></button>
-                    {selectedTask?.id === task.id && <span className={styles.selectedMark}><Target size={15}/></span>}
-                  </article>)}
-                  {!tasks.length && <div className={styles.emptyTasks}><ListTodo size={25}/><strong>قائمتك تبدأ من هنا</strong><span>أضف أول مهمة دراسية صغيرة.</span></div>}
+            {visibleProducts.length ? <div className={styles.productGrid}>
+              {visibleProducts.map((product) => <article className={styles.productCard} key={product.id}>
+                <div className={styles.productVisual + ' ' + styles[product.tone]}>
+                  <span className={styles.productCategory}>{product.category}</span>
+                  <span className={styles.productEmoji} role="img" aria-label={product.name}>{product.emoji}</span>
+                  <button className={styles.favoriteButton} aria-label="إزالة المنتج" onClick={() => { setProducts((current) => current.filter((p) => p.id !== product.id)); setToast('تم حذف المنتج'); }}><Trash2 size={15} /></button>
+                  <span className={styles.visualSpark}>✦</span>
                 </div>
-                {showAddTask ? <form className={styles.addForm} onSubmit={(event) => { event.preventDefault(); addTask(); }}><input autoFocus value={newTask} onChange={(event) => setNewTask(event.target.value)} placeholder="مثال: حل تمرينين في الفيزياء" aria-label="اسم المهمة" maxLength={100}/><input value={newSubject} onChange={(event) => setNewSubject(event.target.value)} placeholder="المادة" aria-label="المادة" maxLength={40}/><div><button type="button" className={styles.cancelAdd} onClick={() => setShowAddTask(false)}>إلغاء</button><button type="submit" className={styles.confirmAdd} disabled={!newTask.trim()}><Plus size={15}/> أضف المهمة</button></div></form> : <button className={styles.addTaskButton} onClick={() => setShowAddTask(true)}><Plus size={17}/> أضف مهمة جديدة</button>}
-                <div className={styles.taskFooter}><span><CheckCheck size={14}/> خطتك محفوظة تلقائيًا</span><button onClick={() => { setTasks(initialTasks.map((task) => ({ ...task, id: `${task.id}-${Date.now()}` }))); setSelectedTaskId(''); setNotice('أُعيدت المهام النموذجية. يمكنك تعديلها لتناسب يومك.'); }}>إعادة المهام النموذجية</button></div>
-              </section>
-
-              <section className={styles.miniCard}>
-                <div className={styles.miniCardIcon}><CircleHelp size={19}/></div><div><strong>هل تشعر بالتشتّت؟</strong><p>اكتب أصغر خطوة ممكنة في مهمتك، وابدأ بها فقط.</p></div><span className={styles.miniSpark}>✦</span>
-              </section>
-            </div>
-          </div>
-
-          {notice && <div className={styles.notice} role="status"><span><Check size={16}/></span>{notice}<button onClick={() => setNotice('')} aria-label="إغلاق التنبيه"><X size={15}/></button></div>}
-          <footer className={styles.footer}><span><Zap size={15} fill="currentColor"/> مِنجَز</span><span>خطوة صغيرة اليوم، فرق كبير غدًا.</span><a href="#home">العودة للأعلى <ArrowUpLeft size={14}/></a></footer>
+                <div className={styles.productInfo}>
+                  <div className={styles.productNameRow}><h3>{product.name}</h3><span className={styles.stockBadge + ' ' + (product.stock === 0 ? styles.outStock : product.stock <= 3 ? styles.lowStock : styles.available)}>{product.stock === 0 ? 'نفد المخزون' : product.stock <= 3 ? 'كمية قليلة' : 'متوفر'}</span></div>
+                  <p>{product.description}</p>
+                  <div className={styles.productMeta}><strong>{money(product.price)}</strong><span>الكمية: {product.stock}</span></div>
+                  <button className={styles.orderButton} onClick={() => orderProduct(product)}><MessageCircle size={16} /> اطلب عبر واتساب <ArrowDownLeft size={15} /></button>
+                </div>
+              </article>)}
+            </div> : <div className={styles.emptyState}><div><Search size={25} /></div><strong>لم نعثر على منتجات</strong><p>جرّب تغيير كلمة البحث أو التصنيف.</p><button onClick={() => { setSearch(''); setCategory('الكل'); }}>عرض كل المنتجات</button></div>}
+            <div className={styles.catalogFoot}><span>عرض {visibleProducts.length} من {products.length} منتجات</span><span><Eye size={14} /> معاينة كتالوجك</span></div>
+          </section>
+          <footer className={styles.footer}>صُنع ببساطة لأصحاب المشاريع الصغيرة <span>✦</span> سوقي</footer>
         </div>
       </section>
+
+      {showForm && <div className={styles.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
+        <form className={styles.modal} onSubmit={addProduct}>
+          <div className={styles.modalHeader}><div><span className={styles.modalIcon}><Package size={19} /></span><h2>إضافة منتج جديد</h2><p>أدخل تفاصيل المنتج لعرضه في كتالوجك.</p></div><button type="button" className={styles.closeButton} onClick={() => setShowForm(false)}><X size={19} /></button></div>
+          <label>اسم المنتج<input autoFocus required value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} placeholder="مثال: حقيبة يدوية" /></label>
+          <div className={styles.formRow}>
+            <label>السعر (دج)<input required type="number" min="0" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} placeholder="1500" /></label>
+            <label>الكمية المتوفرة<input type="number" min="0" value={newProduct.stock} onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} placeholder="10" /></label>
+          </div>
+          <div className={styles.formRow}>
+            <label>التصنيف<select value={newProduct.category} onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}>{categories.filter((c) => c !== 'الكل').map((c) => <option key={c}>{c}</option>)}</select><ChevronDown className={styles.selectChevron} size={14} /></label>
+            <label>رمز المنتج<select value={newProduct.emoji} onChange={(e) => setNewProduct({ ...newProduct, emoji: e.target.value })}>{['🎁','☕','👜','📒','📿','💐','🎧','👕','🕯️','🧸','🧴','📦'].map((e) => <option key={e} value={e}>{e}</option>)}</select></label>
+          </div>
+          <label>وصف قصير <span className={styles.optional}>(اختياري)</span><textarea value={newProduct.description} onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} placeholder="اكتب وصفًا يشجع الزبون على الشراء..." rows={3} /></label>
+          <div className={styles.modalActions}><button type="button" className={styles.cancelButton} onClick={() => setShowForm(false)}>إلغاء</button><button type="submit" className={styles.primaryButton}><Plus size={16} /> حفظ المنتج</button></div>
+        </form>
+      </div>}
+
+      {showSettings && <div className={styles.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) setShowSettings(false); }}>
+        <form className={styles.modal} onSubmit={(e) => { e.preventDefault(); setShowSettings(false); setToast('تم حفظ إعدادات المتجر'); }}>
+          <div className={styles.modalHeader}><div><span className={styles.modalIcon}><Settings2 size={19} /></span><h2>إعدادات المتجر</h2><p>خصص اسم متجرك وطريقة التواصل مع الزبائن.</p></div><button type="button" className={styles.closeButton} onClick={() => setShowSettings(false)}><X size={19} /></button></div>
+          <label>اسم المتجر<input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="اسم مشروعك" /></label>
+          <label>رقم واتساب مع رمز الدولة<input dir="ltr" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="213xxxxxxxxx" /><span className={styles.fieldHint}>مثال الجزائر: 213 ثم رقم الهاتف دون الصفر الأول.</span></label>
+          <div className={styles.settingsNote}><MessageCircle size={17} /><span>عند ضغط الزبون على «اطلب عبر واتساب»، ستفتح محادثة برسالة تحتوي على اسم المنتج وسعره.</span></div>
+          <div className={styles.modalActions}><button type="button" className={styles.cancelButton} onClick={() => setShowSettings(false)}>إلغاء</button><button type="submit" className={styles.primaryButton}><Check size={16} /> حفظ الإعدادات</button></div>
+        </form>
+      </div>}
+
+      {toast && <div className={styles.toast}><span><Check size={16} /></span>{toast}</div>}
     </main>
   );
 }

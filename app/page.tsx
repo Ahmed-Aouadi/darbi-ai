@@ -88,7 +88,15 @@ export default function Home() {
   const startCase = (index: number) => {
     setCaseIndex(index); setFound([]); setQuestioned([]); setSelectedSuspect(''); setNotes(''); setTab('evidence'); setShowReport(false); setShowVerdict(false); setScreen('case');
   };
-  const finishCase = () => setScreen('result');
+  const finishCase = () => {
+    if (found.length < 2 || questioned.length < 1) {
+      setToast('افحص دليلين على الأقل واستجوب مشتبهًا واحدًا قبل توجيه الاتهام');
+      return;
+    }
+    setShowVerdict(false);
+    setSelectedSuspect('');
+    setScreen('result');
+  };
   const clueFound = (id: string) => {
     if (found.includes(id)) return;
     setFound((items) => [...items, id]);
@@ -140,7 +148,7 @@ export default function Home() {
               <button className={tab === 'notes' ? styles.activeTab : ''} onClick={() => setTab('notes')}><FileText size={16} /> ملاحظاتي</button>
             </div>
             {tab === 'evidence' && <div className={styles.evidenceList}>{current.clues.map((clue) => <article key={clue.id} className={styles.evidenceCard}><div className={styles.evidenceIcon}>{clue.icon}</div><div className={styles.evidenceBody}><div className={styles.evidenceMeta}><span>{clue.kind}</span>{found.includes(clue.id) && <span className={styles.examined}><Check size={12} /> تمت المعاينة</span>}</div><h3>{clue.title}</h3><p>{found.includes(clue.id) ? clue.text : 'افتح هذا الدليل لفحص التفاصيل واكتشاف ما قد يخفيه.'}</p>{!found.includes(clue.id) && <button className={styles.inspectButton} onClick={() => clueFound(clue.id)}>فحص الدليل <ArrowLeft size={14} /></button>}</div></article>)}</div>}
-            {tab === 'suspects' && <div className={styles.suspectList}>{current.suspects.map((suspect) => <article className={styles.suspectCard} key={suspect.id}><div className={styles.suspectAvatar}>{suspect.name.slice(0, 1)}</div><div className={styles.suspectBody}><div className={styles.evidenceMeta}><span>{suspect.role}</span>{questioned.includes(suspect.id) && <span className={styles.examined}><Check size={12} /> تم الاستجواب</span>}</div><h3>{suspect.name}</h3><p>{questioned.includes(suspect.id) ? suspect.statement : 'ملف الشهادة مغلق. ابدأ الاستجواب لتسجيل أقواله.'}</p>{questioned.includes(suspect.id) ? <div className={styles.statement}><MessageSquareText size={14} /> معلومة متضاربة: {suspect.secret}</div> : <button className={styles.inspectButton} onClick={() => setQuestioned((items) => [...items, suspect.id])}>استجواب المشتبه به <ArrowLeft size={14} /></button>}</div></article>)}</div>}
+            {tab === 'suspects' && <div className={styles.suspectList}>{current.suspects.map((suspect) => <article className={styles.suspectCard} key={suspect.id}><div className={styles.suspectAvatar}>{suspect.name.slice(0, 1)}</div><div className={styles.suspectBody}><div className={styles.evidenceMeta}><span>{suspect.role}</span>{questioned.includes(suspect.id) && <span className={styles.examined}><Check size={12} /> تم الاستجواب</span>}</div><h3>{suspect.name}</h3><p>{questioned.includes(suspect.id) ? suspect.statement : 'ملف الشهادة مغلق. ابدأ الاستجواب لتسجيل أقواله.'}</p>{questioned.includes(suspect.id) ? <div className={styles.statement}><MessageSquareText size={14} /> معلومة متضاربة: {suspect.secret}</div> : <button className={styles.inspectButton} onClick={() => setQuestioned((items) => items.includes(suspect.id) ? items : [...items, suspect.id])}>استجواب المشتبه به <ArrowLeft size={14} /></button>}</div></article>)}</div>}
             {tab === 'notes' && <div className={styles.notesPane}><div className={styles.notesTitle}><FileText size={18} /><div><strong>دفتر المحقق</strong><span>ملاحظاتك خاصة بهذه الجلسة</span></div></div><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="دوّن التناقضات، اربط الأدلة ببعضها، واكتب فرضيتك هنا..." /><div className={styles.notesHint}>تلميح: قارن التوقيت مع الأدلة المادية قبل توجيه الاتهام.</div></div>}
           </section>
           <aside className={styles.sidePanel}>

@@ -139,7 +139,7 @@ export default function Home() {
   function buildQuiz(source: string): QuizQuestion[] {
     const chunks = splitLesson(source);
     if (chunks.length < 2) return [];
-    const stop = new Set(['التي','الذي','الذين','على','إلى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن','الذي','التي','هذا','هذه']);
+    const stop = new Set(['التي','الذي','الذين','على','إلى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن']);
     const terms = [...new Set((source.match(/[\p{L}\p{N}]{4,}/gu) || []).map((word) => word.toLowerCase()).filter((word) => !stop.has(word)))];
     const questions: QuizQuestion[] = [];
     for (const [index, sentence] of chunks.entries()) {
@@ -150,49 +150,10 @@ export default function Home() {
       const options = [term, ...distractors].slice(0, 4);
       const answer = (index * 3 + 1) % options.length;
       [options[0], options[answer]] = [options[answer], options[0]];
-      const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\  function splitLesson(source: string): string[] {
-    return source.split(/(?<=[.!؟?])\\s+|\\n+/).map((part) => part.trim()).filter((part) => part.length > 25);
-  }
-
-  function buildQuiz(source: string): QuizQuestion[] {
-    const chunks = splitLesson(source);
-    if (chunks.length < 2) return [];
-    return chunks.slice(0, Math.min(8, chunks.length)).map((sentence, index) => {
-      const options = [sentence];
-      for (let step = 1; step < chunks.length && options.length < 4; step++) {
-        const candidate = chunks[(index + step) % chunks.length];
-        if (!options.includes(candidate)) options.push(candidate);
-      }
-      const answer = (index * 3 + 1) % options.length;
-      const shuffled = [...options];
-      [shuffled[0], shuffled[answer]] = [shuffled[answer], shuffled[0]];
-      return {
-        question: `أيّ عبارة وردت في الدرس؟`,
-        options: shuffled,
-        answer,
-        explanation: sentence
-      };
-    });
-  }
-
-  function buildFlashcards(source: string): Flashcard[] {
-    const chunks = splitLesson(source);
-    const words = source.match(/[\\p{L}\\p{N}]{4,}/gu) || [];
-    const frequency = new Map<string, number>();
-    const stop = new Set(['التي','الذي','الذين','على','إلى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن']);
-    words.forEach((word) => { const key = word.toLowerCase(); if (!stop.has(key)) frequency.set(key, (frequency.get(key) || 0) + 1); });
-    const keywords = [...frequency.entries()].sort((a,b) => b[1]-a[1]).map(([word]) => word);
-    return (chunks.length ? chunks : [source.trim()]).slice(0, 12).map((sentence, index) => {
-      const term = keywords.find((word) => sentence.toLowerCase().includes(word.toLowerCase()));
-      return {
-        question: term ? `ما المعلومة الأساسية المتعلقة بـ «${term}»؟` : `ما الفكرة الأساسية في الجزء ${index + 1}؟`,
-        answer: sentence
-      };
-    });
-  }');
-      const blanked = sentence.replace(new RegExp(escapedTerm, 'i'), 'ــــــــــــ');
+      const termPosition = sentence.toLowerCase().indexOf(term);
+      const blanked = sentence.slice(0, termPosition) + 'ــــــــــــ' + sentence.slice(termPosition + term.length);
       questions.push({
-        question: `أكمل العبارة من الدرس: «${blanked}»`,
+        question: 'أكمل العبارة من الدرس: «' + blanked + '»',
         options,
         answer,
         explanation: sentence
@@ -212,12 +173,11 @@ export default function Home() {
     return (chunks.length ? chunks : [source.trim()]).slice(0, 12).map((sentence, index) => {
       const term = keywords.find((word) => sentence.toLowerCase().includes(word.toLowerCase()));
       return {
-        question: term ? `ما المعلومة الأساسية المتعلقة بـ «${term}»؟` : `ما الفكرة الأساسية في الجزء ${index + 1}؟`,
+        question: term ? 'ما المعلومة الأساسية المتعلقة بـ «' + term + '»؟' : 'ما الفكرة الأساسية في الجزء ' + (index + 1) + '؟',
         answer: sentence
       };
     });
   }
-
 
   async function runTask(task: Task) {
     setActiveTask(task); setError('');

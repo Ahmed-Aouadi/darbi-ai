@@ -1,373 +1,247 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { BookOpen, BrainCircuit, CalendarDays, Check, ChevronLeft, CircleHelp, Clock3, FileText, GraduationCap, Layers3, Lightbulb, LoaderCircle, Menu, MessageCircle, Sparkles, Target, Upload, X, Download } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  AlarmClock, ArrowDownLeft, ArrowLeft, ArrowUpLeft, BookOpen, Check, CheckCheck,
+  ChevronLeft, CircleHelp, Coffee, Flame, Focus, Leaf, ListTodo, Menu, Pause,
+  Play, Plus, RotateCcw, Sparkles, Target, Timer, Trophy, X, Zap
+} from 'lucide-react';
 import styles from './page.module.css';
 
-// PDF.js worker is loaded from the same installed package version.
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+type StudyTask = { id: string; title: string; subject: string; minutes: number; done: boolean };
+type TimerMode = 'focus' | 'break';
+
+const initialTasks: StudyTask[] = [
+  { id: 't1', title: 'مراجعة درس الدوال', subject: 'رياضيات', minutes: 25, done: false },
+  { id: 't2', title: 'حل 5 تمارين تطبيقية', subject: 'رياضيات', minutes: 20, done: false },
+  { id: 't3', title: 'تلخيص درس المناعة', subject: 'علوم الطبيعة', minutes: 20, done: false },
+  { id: 't4', title: 'مراجعة المصطلحات', subject: 'لغة عربية', minutes: 15, done: true },
+];
+
+const weekdays = [
+  { short: 'س', label: 'السبت', value: 0 },
+  { short: 'أ', label: 'الأحد', value: 1 },
+  { short: 'إ', label: 'الإثنين', value: 2 },
+  { short: 'ث', label: 'الثلاثاء', value: 3 },
+  { short: 'أ', label: 'الأربعاء', value: 4 },
+  { short: 'خ', label: 'الخميس', value: 5 },
+  { short: 'ج', label: 'الجمعة', value: 6 },
+];
+
+function formatTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+  return minutes + ':' + seconds;
 }
 
-type Task = 'summary' | 'quiz' | 'explain' | 'flashcards';
-type QuizQuestion = { question: string; options: string[]; answer: number; explanation: string };
-type Flashcard = { question: string; answer: string };
-type Result = { task: Task; title: string; text: string; quiz?: QuizQuestion[]; cards?: Flashcard[] };
-
-const taskLabels: Record<Task, string> = { summary: 'تلخيص الدرس', quiz: 'إنشاء اختبار', explain: 'شرح مبسّط', flashcards: 'بطاقات المراجعة' };
-
 export default function Home() {
-  const [lesson, setLesson] = useState('');
-  const [fileName, setFileName] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [activeTask, setActiveTask] = useState<Task>('summary');
-  const [result, setResult] = useState<Result | null>(null);
-  const [error, setError] = useState('');
-  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [flashIndex, setFlashIndex] = useState(0);
-  const [flashFlipped, setFlashFlipped] = useState(false);
-  const [knownCards, setKnownCards] = useState<number[]>([]);
-  const [lessonLoaded, setLessonLoaded] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
-  const wordCount = lesson.trim() ? lesson.trim().split(/\s+/).length : 0;
-  const sentenceCount = lesson.trim() ? splitLesson(lesson).length : 0;
-  const readingMinutes = Math.max(1, Math.ceil(wordCount / 180));
+  const [tasks, setTasks] = useState<StudyTask[]>(initialTasks);
+  const [sessions, setSessions] = useState(0);
+  const [mode, setMode] = useState<TimerMode>('focus');
+  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
+  const [running, setRunning] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState('t1');
+  const [newTask, setNewTask] = useState('');
+  const [newSubject, setNewSubject] = useState('دراسة عامة');
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [notice, setNotice] = useState('');
+
+  const today = new Date();
+  const dateLabel = new Intl.DateTimeFormat('ar-DZ', { weekday: 'long', day: 'numeric', month: 'long' }).format(today);
+  const greeting = today.getHours() < 12 ? 'صباح الخير' : today.getHours() < 18 ? 'مساء النشاط' : 'مساء الإنجاز';
+  const doneCount = tasks.filter((task) => task.done).length;
+  const progress = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
+  const selectedTask = tasks.find((task) => task.id === selectedTaskId && !task.done) || tasks.find((task) => !task.done);
+  const timerTotal = mode === 'focus' ? 25 * 60 : 5 * 60;
+  const timerProgress = Math.max(0, Math.min(100, (secondsLeft / timerTotal) * 100));
+  const todayIndex = (today.getDay() + 6) % 7;
+  const weekly = useMemo(() => weekdays.map((day, index) => ({ ...day, today: index === todayIndex, complete: index < todayIndex })), [todayIndex]);
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem('darbi-lesson-v1');
-      if (saved) setLesson(saved);
-    } catch { /* Storage can be disabled by the browser. */ }
-    finally { setLessonLoaded(true); }
+      const saved = localStorage.getItem('minjaz-dashboard-v1');
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (Array.isArray(data.tasks)) setTasks(data.tasks);
+        if (Number.isFinite(data.sessions)) setSessions(data.sessions);
+      }
+    } catch { /* Keep the default plan if local storage is unavailable. */ }
+    finally { setLoaded(true); }
   }, []);
 
   useEffect(() => {
-    if (!lessonLoaded) return;
-    try {
-      if (lesson.trim()) window.localStorage.setItem('darbi-lesson-v1', lesson);
-      else window.localStorage.removeItem('darbi-lesson-v1');
-    } catch { /* Keep the editor usable when storage is unavailable. */ }
-  }, [lesson, lessonLoaded]);
+    if (!loaded) return;
+    try { localStorage.setItem('minjaz-dashboard-v1', JSON.stringify({ tasks, sessions })); }
+    catch { /* The app remains usable without persistence. */ }
+  }, [tasks, sessions, loaded]);
 
-  const sampleLesson = 'التمثيل الضوئي عملية حيوية تقوم بها النباتات الخضراء لصنع غذائها باستخدام ضوء الشمس.\n\nتمتص الجذور الماء والأملاح المعدنية من التربة، بينما تمتص الأوراق ثاني أكسيد الكربون من الهواء. ويساعد اليخضور الموجود في الأوراق على التقاط الطاقة الضوئية.\n\nتنتج هذه العملية سكريات تستعملها النبتة للحصول على الطاقة والنمو، وينطلق الأكسجين إلى الهواء. لذلك يُعد التمثيل الضوئي مهمًا لاستمرار الحياة على الأرض.';
-
-  function loadSampleLesson() {
-    setLesson(sampleLesson);
-    setFileName('درس تجريبي: التمثيل الضوئي');
-    setResult(null); setError(''); setActiveTask('summary');
-  }
-
-  async function extractPdf(file: File) {
-    const buffer = await file.arrayBuffer();
-    const pdf: PDFDocumentProxy = await pdfjsLib.getDocument({ data: buffer }).promise;
-    let text = '';
-    for (let pageNo = 1; pageNo <= Math.min(pdf.numPages, 80); pageNo++) {
-      const page = await pdf.getPage(pageNo);
-      const content = await page.getTextContent();
-      text += content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ') + '\n\n';
-    }
-    if (!text.trim()) throw new Error('لم أتمكن من استخراج النص. قد يكون الملف ممسوحًا ضوئيًا كصور؛ انسخ النص أو استخدم ملفًا يحتوي على نص قابل للتحديد.');
-    return text;
-  }
-
-  async function onFileChange(file?: File) {
-    if (!file) return;
-    setError(''); setFileName(file.name);
-    try {
-      let text = '';
-      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) text = await extractPdf(file);
-      else if (file.type.startsWith('text/') || /\.(txt|md|csv)$/i.test(file.name)) text = await file.text();
-      else throw new Error('الملفات المدعومة حاليًا هي PDF وTXT وMD وCSV.');
-      setLesson(text.slice(0, 50000));
-      setResult(null);
-    } catch (e) { setError(e instanceof Error ? e.message : 'تعذرت قراءة الملف.'); setFileName(''); }
-  }
-
-  const stopWords = new Set([
-    'التي','الذي','الذين','اللذين','اللاتي','اللواتي','على','إلى','الى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','كانت','كانوا','تكون','يكون','يمكن','كما','وهي','وهو','بعد','قبل','أكثر','اقل','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن','أنا','نحن','أنت','أنتم','إن','أن','إذا','إذ','أو','بل','حتى','لكن','لأن','لذلك','بها','به','له','لها','من','عن','مع','وقد','كما','أيضا','أيضًا','حيثما','عليه','عليها','الذي','التي','the','and','that','with','from','this','have','are','for','was','were','into','their','they','which','what','when','where','your','you','then','than','this','these','those','can','will','its','not','use','using'
-  ]);
-
-  function splitLesson(source: string): string[] {
-    return source
-      .replace(/\r/g, '\n')
-      .replace(/[\t ]+/g, ' ')
-      .split(/(?<=[.!؟?؛])\s+|\n+/)
-      .map((part) => part.trim().replace(/^[-•*\d.\s]+/, ''))
-      .filter((part) => part.length > 18 && part.split(/\s+/).length >= 4);
-  }
-
-  function getKeywords(source: string): string[] {
-    const tokens = source.match(/[\p{L}\p{N}]{3,}/gu) || [];
-    const frequency = new Map<string, number>();
-    tokens.forEach((token) => {
-      const word = token.toLocaleLowerCase('ar');
-      if (stopWords.has(word) || /^\d+$/.test(word)) return;
-      frequency.set(word, (frequency.get(word) || 0) + 1);
-    });
-    return [...frequency.entries()]
-      .sort((a, b) => (b[1] - a[1]) || (b[0].length - a[0].length))
-      .map(([word]) => word);
-  }
-
-  function sentenceScore(sentence: string, keywords: string[]): number {
-    const normalized = sentence.toLocaleLowerCase('ar');
-    const words = normalized.match(/[\p{L}\p{N}]{3,}/gu) || [];
-    const unique = new Set(words.filter((word) => !stopWords.has(word)));
-    const keywordHits = keywords.filter((word) => normalized.includes(word)).length;
-    return keywordHits * 3 + Math.min(unique.size, 8) + Math.min(sentence.length / 120, 2);
-  }
-
-  function makeLocalResult(task: Task, source: string): string {
-    const clean = source.replace(/\s+/g, ' ').trim();
-    const chunks = splitLesson(source);
-    const keywords = getKeywords(source);
-    if (task === 'summary') {
-      if (!chunks.length) return 'لم أجد جملًا كافية لتلخيصها. أضف نصًا أطول مع جمل مكتملة.';
-      const ranked = chunks
-        .map((sentence, index) => ({ sentence, index, score: sentenceScore(sentence, keywords) }))
-        .sort((a, b) => b.score - a.score || a.index - b.index)
-        .slice(0, Math.min(6, Math.max(3, Math.ceil(chunks.length * 0.4))))
-        .sort((a, b) => a.index - b.index);
-      return 'ملخص مستخرج من نص الدرس\n\n' +
-        ranked.map(({ sentence }, i) => `• ${sentence}`).join('\n\n') +
-        (keywords.length ? '\n\nمصطلحات أساسية في النص: ' + keywords.slice(0, 8).join('، ') : '') +
-        '\n\nللتأكد من الفهم: حاول تلخيص الدرس في جملتين من ذاكرتك، ثم قارن إجابتك بالنقاط أعلاه.';
-    }
-    if (task === 'explain') {
-      if (!chunks.length) return clean;
-      const keySentences = chunks
-        .map((sentence, index) => ({ sentence, index, score: sentenceScore(sentence, keywords) }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, Math.min(5, chunks.length))
-        .sort((a, b) => a.index - b.index);
-      const glossary = keywords.slice(0, 6).map((term) => {
-        const sentence = chunks.find((part) => part.toLocaleLowerCase('ar').includes(term));
-        return sentence ? `• ${term}: ورد المصطلح في هذا السياق: ${sentence}` : '';
-      }).filter(Boolean);
-      return 'شرح منظّم اعتمادًا على محتوى الدرس\n\n' +
-        'الفكرة المحورية\n' + (keySentences[0]?.sentence || clean.slice(0, 300)) +
-        '\n\nالأفكار بالترتيب\n' + keySentences.map(({ sentence }, i) => `${i + 1}. ${sentence}`).join('\n\n') +
-        (glossary.length ? '\n\nمصطلحات من النص وسياقها\n' + glossary.join('\n\n') : '') +
-        '\n\nاختبر فهمك بنفسك\n1. ما الفكرة الرئيسية دون النظر إلى النص؟\n2. ما المصطلحان الأكثر أهمية، وكيف يرتبطان ببعضهما؟\n3. اذكر معلومة واحدة تحتاج إلى مراجعتها.';
-    }
-    if (task === 'quiz') {
-      return 'أنشئ اختبارًا تفاعليًا من النص، ثم أجب عن الأسئلة في قسم الاختبار أدناه.';
-    }
-    const cards = buildFlashcards(source);
-    return 'بطاقات المراجعة\n\n' + cards.map((card, i) =>
-      `البطاقة ${i + 1}\nالسؤال: ${card.question}\nالإجابة: ${card.answer}`
-    ).join('\n\n────────────\n\n');
-  }
-
-  function buildQuiz(source: string): QuizQuestion[] {
-    const chunks = splitLesson(source);
-    const keywords = getKeywords(source);
-    if (chunks.length < 2 || keywords.length < 4) return [];
-    const questions: QuizQuestion[] = [];
-    const usedTerms = new Set<string>();
-
-    for (const [index, sentence] of chunks.entries()) {
-      const normalized = sentence.toLocaleLowerCase('ar');
-      const term = keywords
-        .filter((word) => !usedTerms.has(word) && normalized.includes(word) && word.length >= 4)
-        .sort((a, b) => b.length - a.length)[0];
-      if (!term) continue;
-
-      const distractors = keywords
-        .filter((word) => word !== term && !normalized.includes(word) && !usedTerms.has(word))
-        .slice(0, 3);
-      if (distractors.length < 2) continue;
-
-      const options = [term, ...distractors];
-      // Deterministic shuffle: avoids changing the answer position on every render.
-      const shift = (index * 3 + 1) % options.length;
-      const shuffled = options.map((_, i) => options[(i + shift) % options.length]);
-      const answer = shuffled.indexOf(term);
-      const termPosition = normalized.indexOf(term);
-      const originalTerm = sentence.slice(termPosition, termPosition + term.length);
-      const blanked = sentence.slice(0, termPosition) + 'ــــــــــــ' + sentence.slice(termPosition + originalTerm.length);
-      questions.push({
-        question: 'أكمل العبارة بالمصطلح الصحيح: «' + blanked + '»',
-        options: shuffled,
-        answer,
-        explanation: 'الإجابة من نص الدرس: ' + sentence
+  useEffect(() => {
+    if (!running) return;
+    const interval = window.setInterval(() => {
+      setSecondsLeft((current) => {
+        if (current <= 1) {
+          window.clearInterval(interval);
+          setRunning(false);
+          if (mode === 'focus') {
+            setSessions((count) => count + 1);
+            setNotice('أحسنت! انتهت جلسة تركيز. خذ نفسًا عميقًا قبل المتابعة.');
+          } else {
+            setNotice('انتهت الاستراحة. أنت جاهز لجولة جديدة.');
+          }
+          return 0;
+        }
+        return current - 1;
       });
-      usedTerms.add(term);
-      if (questions.length >= 8) break;
-    }
-    return questions;
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [running, mode]);
+
+  function changeMode(nextMode: TimerMode) {
+    setRunning(false);
+    setMode(nextMode);
+    setSecondsLeft(nextMode === 'focus' ? 25 * 60 : 5 * 60);
+    setNotice('');
   }
 
-  function buildFlashcards(source: string): Flashcard[] {
-    const chunks = splitLesson(source);
-    const keywords = getKeywords(source);
-    const sentences = chunks.length ? chunks : [source.trim()].filter(Boolean);
-    const cards: Flashcard[] = [];
-    const usedTerms = new Set<string>();
-
-    for (const sentence of sentences) {
-      const normalized = sentence.toLocaleLowerCase('ar');
-      const term = keywords.find((word) => !usedTerms.has(word) && normalized.includes(word) && word.length >= 4);
-      if (term) {
-        cards.push({
-          question: `اشرح مصطلح «${term}» وفق ما ورد في الدرس.`,
-          answer: sentence
-        });
-        usedTerms.add(term);
-      } else {
-        cards.push({
-          question: `ما الفكرة الأساسية التي تذكرها هذه الجملة؟`,
-          answer: sentence
-        });
-      }
-      if (cards.length >= 12) break;
-    }
-    return cards;
+  function resetTimer() {
+    setRunning(false);
+    setSecondsLeft(timerTotal);
+    setNotice('');
   }
 
-  function getResultContent(current: Result): string {
-    if (current.text) return current.text;
-    if (current.quiz?.length) {
-      return current.title + '\n\n' + current.quiz.map((question, index) =>
-        `السؤال ${index + 1}: ${question.question}\nالخيارات: ${question.options.join(' / ')}\nالإجابة الصحيحة: ${question.options[question.answer]}\nالتفسير: ${question.explanation}`
-      ).join('\n\n');
-    }
-    if (current.cards?.length) {
-      return current.title + '\n\n' + current.cards.map((card, index) =>
-        `البطاقة ${index + 1}\nالسؤال: ${card.question}\nالإجابة: ${card.answer}`
-      ).join('\n\n────────────\n\n');
-    }
-    return current.title;
+  function addTask() {
+    const title = newTask.trim();
+    if (!title) return;
+    const task: StudyTask = {
+      id: `task-${Date.now()}`, title, subject: newSubject.trim() || 'دراسة عامة', minutes: 25, done: false,
+    };
+    setTasks((current) => [...current, task]);
+    setSelectedTaskId(task.id);
+    setNewTask('');
+    setShowAddTask(false);
+    setNotice('أُضيفت المهمة إلى خطتك. خطوة صغيرة تكفي للبداية.');
   }
 
-  async function copyResult() {
-    if (!result) return;
-    try {
-      await navigator.clipboard.writeText(getResultContent(result));
-      setError('تم نسخ النتيجة كاملة إلى الحافظة.');
-    } catch {
-      setError('تعذر النسخ تلقائيًا. حدّد النتيجة وانسخها يدويًا.');
-    }
+  function toggleTask(id: string) {
+    setTasks((current) => current.map((task) => task.id === id ? { ...task, done: !task.done } : task));
+    setNotice('');
   }
 
-  function downloadResult() {
-    if (!result) return;
-    const blob = new Blob([getResultContent(result)], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `darbi-${result.task}-${new Date().toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    setError('جهّزت ملف النتيجة للتنزيل.');
+  function selectTask(task: StudyTask) {
+    if (task.done) return;
+    setSelectedTaskId(task.id);
+    setMode('focus');
+    setRunning(false);
+    setSecondsLeft(25 * 60);
+    setNotice(`الجلسة التالية: ${task.title}`);
   }
 
-  async function runTask(task: Task) {
-    setActiveTask(task); setError('');
-    if (lesson.trim().length < 30) { setError('أضف نص الدرس أو ارفع ملفًا أولًا (30 حرفًا على الأقل).'); return; }
-    setBusy(true); setResult(null); setQuizAnswers({}); setQuizSubmitted(false); setFlashIndex(0); setFlashFlipped(false); setKnownCards([]);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 120));
-      if (task === 'quiz') {
-        const quiz = buildQuiz(lesson);
-        if (quiz.length < 2) { setError('أضف فقرتين أو أكثر لإنشاء اختبار متنوع.'); return; }
-        setResult({ task, title: taskLabels[task], text: '', quiz });
-      } else if (task === 'flashcards') {
-        const cards = buildFlashcards(lesson);
-        setResult({ task, title: taskLabels[task], text: '', cards });
-      } else {
-        const output = makeLocalResult(task, lesson);
-        setResult({ task, title: taskLabels[task], text: output });
-      }
-    } catch {
-      setError('تعذّر تجهيز النتيجة. حاول تقليل طول النص أو تقسيم الدرس إلى أجزاء.');
-    } finally { setBusy(false); }
-  }
+  return (
+    <main className={styles.page}>
+      <aside className={styles.sidebar}>
+        <a className={styles.brand} href="#home" aria-label="منجز - الرئيسية">
+          <span className={styles.brandMark}><Zap size={22} fill="currentColor" /></span>
+          <span><strong>مِنجَز</strong><small>خطوات صغيرة، نتائج كبيرة</small></span>
+        </a>
+        <div className={styles.sideCaption}>مساحة العمل</div>
+        <a className={`${styles.sideLink} ${styles.sideLinkActive}`} href="#home"><span><Target size={18}/></span> لوحة اليوم</a>
+        <a className={styles.sideLink} href="#tasks"><span><ListTodo size={18}/></span> مهامي الدراسية <i>{tasks.filter((task) => !task.done).length}</i></a>
+        <a className={styles.sideLink} href="#focus"><span><Timer size={18}/></span> جلسة التركيز</a>
+        <a className={styles.sideLink} href="#progress"><span><Trophy size={18}/></span> تقدّمي</a>
+        <div className={styles.sidebarQuote}>
+          <span className={styles.quoteIcon}><Leaf size={19}/></span>
+          <strong>لا تنتظر الحماس</strong>
+          <p>ابدأ بخمس دقائق فقط. غالبًا ما تأتي الرغبة في الاستمرار بعد البداية.</p>
+          <span className={styles.quoteTag}>تذكير اليوم</span>
+        </div>
+        <div className={styles.sideBottom}><span className={styles.localDot}/> بياناتك محفوظة على جهازك</div>
+      </aside>
 
-  return <main className={styles.app}>
-    <aside className={`${styles.sidebar} ${mobileNavOpen ? styles.sidebarOpen : ""}`}>
-      <a className={styles.brand} href="#home"><span className={styles.brandIcon}><GraduationCap size={25}/></span><span><b>دَرْبي</b><small>تعلّم بذكاء</small></span><span className={styles.aiTag}>AI</span></a>
-      <div className={styles.sideLabel}>مساحة التعلّم</div>
-      <a onClick={() => setMobileNavOpen(false)} className={`${styles.navItem} ${styles.navActive}`} href="#home"><Layers3 size={18}/> لوحة التعلّم</a>
-      <a onClick={() => setMobileNavOpen(false)} className={styles.navItem} href="#workspace"><BookOpen size={18}/> مساعد الدروس</a>
-      <button className={styles.navItem} onClick={() => { setMobileNavOpen(false); runTask('quiz'); }}><CircleHelp size={18}/> اختبار من درسي</button>
-      <button className={styles.navItem} onClick={() => { setMobileNavOpen(false); runTask('flashcards'); }}><Target size={18}/> بطاقات المراجعة</button>
-      <div className={styles.sideLabel}>حسابك</div>
-      <a onClick={() => setMobileNavOpen(false)} className={styles.navItem} href="#plan"><CalendarDays size={18}/> خطة المراجعة</a>
-      <div className={styles.sidebarBottom}><div className={styles.tipIcon}><Lightbulb size={18}/></div><b>خطوة صغيرة كل يوم</b><p>راجع درسًا واحدًا اليوم، وستقترب من هدفك أكثر.</p><span className={styles.tipProgress}><i/></span><small>ابدأ بأول درس لك</small></div>
-      <div className={styles.sideFooter}>نسخة تجريبية · دَرْبي AI</div>
-    </aside>
+      <section className={styles.main} id="home">
+        <header className={styles.topbar}>
+          <div className={styles.mobileBrand}><span className={styles.brandMark}><Zap size={18} fill="currentColor"/></span><strong>مِنجَز</strong></div>
+          <div className={styles.dateLine}><span className={styles.dateIcon}><AlarmClock size={16}/></span>{dateLabel}</div>
+          <button className={styles.profileButton} onClick={() => setNotice('أنت تستخدم مساحة دراسة شخصية. لا تحتاج إلى إنشاء حساب للبدء.')} aria-label="معلومات الحساب"><span className={styles.profileAvatar}>ط</span><span>مساحتي</span><ChevronLeft size={15}/></button>
+        </header>
 
-    <section className={styles.main} id="home">
-      <header className={styles.topbar}><button className={styles.mobileMenu} aria-label={mobileNavOpen ? "إغلاق القائمة" : "فتح القائمة"} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={21}/> : <Menu size={21}/>}</button><div className={styles.breadcrumb}>مساحة التعلّم <ChevronLeft size={15}/> <b>الرئيسية</b></div><div className={styles.topRight}><span className={styles.onlineDot}/> مساحة تعلّمك جاهزة <div className={styles.avatar}>ط</div></div></header>
-      <div className={styles.content}>
-        <section className={styles.welcome}><div><div className={styles.eyebrow}><Sparkles size={15}/> تعلّم بطريقة أذكى</div><h1>كل درس، فرصة جديدة <span>للنجاح.</span></h1><p>أدوات مراجعة تعمل مباشرة على جهازك، دون مفتاح API أو اشتراك.</p></div><div className={styles.heroArt}><div className={styles.heroGlow}/><div className={styles.heroBook}><BookOpen size={51}/><Sparkles className={styles.sparkleOne} size={20}/><span className={styles.heroOrbit}>AI</span></div><div className={styles.floatCard}><Check size={15}/> تعلّمك يتقدّم</div></div></section>
+        <div className={styles.content}>
+          <section className={styles.welcome}>
+            <div className={styles.welcomeCopy}>
+              <span className={styles.eyebrow}><Sparkles size={15}/> خطتك الدراسية تبدأ هنا</span>
+              <h1>{greeting}، <span>أنت قادر عليها.</span></h1>
+              <p>لا تحتاج إلى إنهاء كل شيء اليوم. اختر مهمة واحدة وامنحها تركيزك الكامل.</p>
+              <a className={styles.welcomeCta} href="#focus">ابدأ جلسة تركيز <ArrowLeft size={16}/></a>
+            </div>
+            <div className={styles.welcomeArt} aria-hidden="true">
+              <div className={styles.artSun}/><div className={styles.artBlob}/>
+              <div className={styles.artBook}><BookOpen size={43}/><span>25</span></div>
+              <span className={styles.artStar}><Sparkles size={19}/></span>
+              <span className={styles.artPill}><Check size={13}/> خطوة اليوم</span>
+            </div>
+          </section>
 
-        <section className={styles.metricsGrid} aria-label="إحصاءات الدرس">
-          <article className={styles.metricCard}><span className={styles.metricIcon}><FileText size={18}/></span><div><strong>{wordCount.toLocaleString('ar')}</strong><span>كلمة في الدرس</span></div><small>{lesson.trim() ? 'تم احتسابها تلقائيًا' : 'بانتظار نص الدرس'}</small></article>
-          <article className={styles.metricCard}><span className={styles.metricIcon}><BrainCircuit size={18}/></span><div><strong>{sentenceCount.toLocaleString('ar')}</strong><span>جملة قابلة للمراجعة</span></div><small>حسب علامات الترقيم</small></article>
-          <article className={styles.metricCard}><span className={styles.metricIcon}><Clock3 size={18}/></span><div><strong>{lesson.trim() ? readingMinutes.toLocaleString('ar') : '—'}</strong><span>دقيقة قراءة تقريبية</span></div><small>على أساس ١٨٠ كلمة/دقيقة</small></article>
-        </section>
+          <section className={styles.statsGrid} aria-label="ملخص التقدم">
+            <article className={styles.statCard}><span className={`${styles.statIcon} ${styles.statViolet}`}><CheckCheck size={19}/></span><div><small>المهام المنجزة</small><strong>{doneCount}<em> / {tasks.length}</em></strong></div><span className={styles.statFoot}>{progress}% من الخطة</span></article>
+            <article className={styles.statCard}><span className={`${styles.statIcon} ${styles.statOrange}`}><Flame size={19}/></span><div><small>جلسات التركيز</small><strong>{sessions}<em> جلسة</em></strong></div><span className={styles.statFoot}>كل جلسة تصنع فرقًا</span></article>
+            <article className={styles.statCard}><span className={`${styles.statIcon} ${styles.statGreen}`}><Target size={19}/></span><div><small>نسبة إنجاز اليوم</small><strong>{progress}<em>%</em></strong></div><span className={styles.statFoot}>{progress === 100 ? 'رائع! أكملت خطتك' : 'تقدّمك يتراكم'}</span></article>
+          </section>
 
-        <div className={styles.sectionHeading}><div><h2>ابدأ جلسة تعلّم</h2><p>أدخل درسًا، واختر كيف تريد أن تتعلّمه.</p></div><span className={styles.stepPill}><span>01</span> اختر الدرس</span></div>
-        <section className={styles.workspace} id="workspace">
-          <div className={styles.inputHead}><div className={styles.inputTitleIcon}><FileText size={20}/></div><div><h3>ما الدرس الذي تراجعه اليوم؟</h3><p>الصق نص الدرس أو ارفع ملفًا. تتم المعالجة محليًا في متصفحك.</p></div><span className={styles.secureLabel}><Check size={13}/> تحكّم في ملفاتك</span></div>
-          <textarea className={styles.lessonInput} value={lesson} onChange={e => {setLesson(e.target.value); setResult(null);}} placeholder={'الصق نص الدرس هنا...\n\nمثال: يُعرَّف التمثيل الضوئي بأنه العملية التي تستخدم فيها النباتات ضوء الشمس لتحويل الماء وثاني أكسيد الكربون إلى سكريات وأكسجين.'} maxLength={50000} aria-label="نص الدرس"/>
-          <div className={styles.inputFooter}><div className={styles.fileActions}><button className={styles.uploadBtn} onClick={() => fileInput.current?.click()}><Upload size={16}/> رفع ملف PDF أو نص</button><button className={styles.uploadBtn} onClick={loadSampleLesson}>جرّب درسًا نموذجيًا</button><button className={styles.uploadBtn} onClick={() => {setLesson('');setFileName('');setResult(null);setError('');if(fileInput.current)fileInput.current.value='';}}>مسح</button><input ref={fileInput} type="file" accept=".pdf,.txt,.md,.csv,text/plain,application/pdf" hidden onChange={e => onFileChange(e.target.files?.[0])}/>{fileName && <span className={styles.fileName}><FileText size={13}/>{fileName}</span>}</div><span className={styles.charCount}>{lesson.length.toLocaleString('ar')} / ٥٠٬٠٠٠</span></div>
-          <div className={styles.actionDivider}/><div className={styles.actionHead}><span>ماذا تريد أن تفعل بالدرس؟</span><span className={styles.languageSelect}>لغة النتيجة: العربية · معالجة محلية</span></div>
-          <div className={styles.taskGrid}>
-            <button className={`${styles.taskCard} ${activeTask === 'summary' ? styles.taskSelected : ''}`} onClick={() => runTask('summary')} disabled={busy}><span className={`${styles.taskIcon} ${styles.purple}`}><FileText size={20}/></span><span><b>لخّص الدرس</b><small>أهم الأفكار في نقاط</small></span><ChevronLeft size={17} className={styles.taskArrow}/></button>
-            <button className={`${styles.taskCard} ${activeTask === 'quiz' ? styles.taskSelected : ''}`} onClick={() => runTask('quiz')} disabled={busy}><span className={`${styles.taskIcon} ${styles.orange}`}><CircleHelp size={20}/></span><span><b>اختبر نفسك</b><small>أسئلة مع تصحيح وشرح</small></span><ChevronLeft size={17} className={styles.taskArrow}/></button>
-            <button className={`${styles.taskCard} ${activeTask === 'explain' ? styles.taskSelected : ''}`} onClick={() => runTask('explain')} disabled={busy}><span className={`${styles.taskIcon} ${styles.green}`}><MessageCircle size={20}/></span><span><b>اشرح لي ببساطة</b><small>فهم تدريجي وأمثلة</small></span><ChevronLeft size={17} className={styles.taskArrow}/></button>
-            <button className={`${styles.taskCard} ${activeTask === 'flashcards' ? styles.taskSelected : ''}`} onClick={() => runTask('flashcards')} disabled={busy}><span className={`${styles.taskIcon} ${styles.blue}`}><Layers3 size={20}/></span><span><b>بطاقات المراجعة</b><small>سؤال وجواب للحفظ</small></span><ChevronLeft size={17} className={styles.taskArrow}/></button>
+          <div className={styles.columns}>
+            <div className={styles.leftColumn}>
+              <section className={styles.panel} id="focus">
+                <div className={styles.panelHeader}><div><span className={styles.panelKicker}>مساحة التركيز</span><h2>جلسة واحدة تغيّر يومك</h2></div><span className={styles.liveBadge}><i/> {running ? 'الجلسة جارية' : 'جاهز للبدء'}</span></div>
+                <div className={styles.timerModes}>
+                  <button className={mode === 'focus' ? styles.modeActive : ''} onClick={() => changeMode('focus')}><Target size={15}/> تركيز <small>25 د</small></button>
+                  <button className={mode === 'break' ? styles.modeActive : ''} onClick={() => changeMode('break')}><Coffee size={15}/> استراحة <small>5 د</small></button>
+                </div>
+                <div className={styles.timerStage}>
+                  <div className={styles.timerRing} style={{ background: `conic-gradient(var(--accent) ${timerProgress * 3.6}deg, #eeedf6 0deg)` }}>
+                    <div className={styles.timerInner}><span className={styles.timerLabel}>{mode === 'focus' ? 'وقت التركيز' : 'وقت الراحة'}</span><strong>{formatTime(secondsLeft)}</strong><span className={styles.timerSub}>{running ? 'أبعد المشتتات' : 'خذ نفسًا وابدأ'}</span></div>
+                  </div>
+                  <div className={styles.timerTask}><span className={styles.timerTaskIcon}><BookOpen size={17}/></span><div><small>المهمة الحالية</small><strong>{mode === 'break' ? 'استرح قليلًا' : selectedTask?.title || 'اختر مهمة من القائمة'}</strong><span>{mode === 'break' ? 'ابتعد عن الشاشة إن استطعت' : selectedTask?.subject || 'أضف مهمة جديدة للبدء'}</span></div></div>
+                </div>
+                <div className={styles.timerControls}>
+                  <button className={styles.resetButton} onClick={resetTimer} aria-label="إعادة ضبط المؤقت"><RotateCcw size={17}/></button>
+                  <button className={styles.startButton} onClick={() => { if (secondsLeft === 0) setSecondsLeft(timerTotal); setRunning((value) => !value); setNotice(''); }}><span>{running ? <Pause size={17} fill="currentColor"/> : <Play size={17} fill="currentColor"/>}</span>{running ? 'إيقاف مؤقت' : secondsLeft === 0 ? 'ابدأ من جديد' : 'ابدأ التركيز'}</button>
+                  <button className={styles.skipButton} onClick={() => changeMode(mode === 'focus' ? 'break' : 'focus')} aria-label="تبديل وضع المؤقت"><ArrowUpLeft size={18}/></button>
+                </div>
+                <p className={styles.timerHint}><span><Sparkles size={14}/></span> نصيحة: أغلق الإشعارات وحدّد هدفًا واحدًا قبل أن تبدأ.</p>
+              </section>
+
+              <section className={styles.panel} id="progress">
+                <div className={styles.panelHeader}><div><span className={styles.panelKicker}>استمرارية هادئة</span><h2>رحلتك هذا الأسبوع</h2></div><span className={styles.weekTag}>هذا الأسبوع</span></div>
+                <div className={styles.weekRow}>{weekly.map((day) => <div key={day.value} className={styles.weekDay}><span className={day.today ? styles.weekToday : day.complete ? styles.weekDone : ''}>{day.complete ? <Check size={15}/> : day.short}</span><small>{day.label}</small>{day.today && <i/>}</div>)}</div>
+                <div className={styles.weekNote}><span className={styles.weekNoteIcon}><Trophy size={17}/></span><p><strong>التقدّم أهم من الكمال.</strong><br/>كل مرة تعود فيها إلى خطتك، فأنت تبني عادة أقوى.</p><span className={styles.weekDecoration}>✳</span></div>
+              </section>
+            </div>
+
+            <div className={styles.rightColumn}>
+              <section className={styles.panel} id="tasks">
+                <div className={styles.panelHeader}><div><span className={styles.panelKicker}>قائمة اليوم</span><h2>ماذا ستنجز اليوم؟</h2></div><span className={styles.taskCount}>{doneCount}/{tasks.length}</span></div>
+                <div className={styles.taskProgress}><span style={{ width: `${progress}%` }}/></div>
+                <div className={styles.taskList}>
+                  {tasks.map((task) => <article key={task.id} className={`${styles.taskRow} ${task.done ? styles.taskDone : ''} ${selectedTask?.id === task.id ? styles.taskSelected : ''}`}>
+                    <button className={styles.taskCheck} onClick={() => toggleTask(task.id)} aria-label={task.done ? 'إلغاء إنجاز المهمة' : 'إنجاز المهمة'}>{task.done && <Check size={15}/>}</button>
+                    <button className={styles.taskInfo} onClick={() => selectTask(task)} disabled={task.done}><strong>{task.title}</strong><span><i>{task.subject}</i><i><Timer size={12}/>{task.minutes} د</i></span></button>
+                    {selectedTask?.id === task.id && <span className={styles.selectedMark}><Target size={15}/></span>}
+                  </article>)}
+                  {!tasks.length && <div className={styles.emptyTasks}><ListTodo size={25}/><strong>قائمتك تبدأ من هنا</strong><span>أضف أول مهمة دراسية صغيرة.</span></div>}
+                </div>
+                {showAddTask ? <form className={styles.addForm} onSubmit={(event) => { event.preventDefault(); addTask(); }}><input autoFocus value={newTask} onChange={(event) => setNewTask(event.target.value)} placeholder="مثال: حل تمرينين في الفيزياء" aria-label="اسم المهمة" maxLength={100}/><input value={newSubject} onChange={(event) => setNewSubject(event.target.value)} placeholder="المادة" aria-label="المادة" maxLength={40}/><div><button type="button" className={styles.cancelAdd} onClick={() => setShowAddTask(false)}>إلغاء</button><button type="submit" className={styles.confirmAdd} disabled={!newTask.trim()}><Plus size={15}/> أضف المهمة</button></div></form> : <button className={styles.addTaskButton} onClick={() => setShowAddTask(true)}><Plus size={17}/> أضف مهمة جديدة</button>}
+                <div className={styles.taskFooter}><span><CheckCheck size={14}/> خطتك محفوظة تلقائيًا</span><button onClick={() => { setTasks(initialTasks.map((task) => ({ ...task, id: `${task.id}-${Date.now()}` }))); setSelectedTaskId(''); setNotice('أُعيدت المهام النموذجية. يمكنك تعديلها لتناسب يومك.'); }}>إعادة المهام النموذجية</button></div>
+              </section>
+
+              <section className={styles.miniCard}>
+                <div className={styles.miniCardIcon}><CircleHelp size={19}/></div><div><strong>هل تشعر بالتشتّت؟</strong><p>اكتب أصغر خطوة ممكنة في مهمتك، وابدأ بها فقط.</p></div><span className={styles.miniSpark}>✦</span>
+              </section>
+            </div>
           </div>
-          {error && <div className={styles.errorBox} role="alert"><CircleHelp size={18}/><span>{error}</span><button onClick={() => setError('')} aria-label="إغلاق"><X size={16}/></button></div>}
-          {busy && <div className={styles.loadingBox}><LoaderCircle className={styles.spinner} size={22}/><div><b>نحضّر لك تجربة التعلّم...</b><p>نرتّب محتوى الدرس محليًا دون اتصال بخدمة ذكاء اصطناعي.</p></div></div>}
-        </section>
 
-        {result && <section className={styles.resultCard} aria-live="polite">
-          <div className={styles.resultHeader}><div className={styles.resultBadge}><Sparkles size={17}/></div><div><h3>{result.title}</h3><p>{result.task === 'quiz' ? 'أجب عن الأسئلة ثم اعرض التصحيح' : result.task === 'flashcards' ? 'اقلب البطاقة لتكشف الإجابة' : 'تم الإنشاء اعتمادًا على نص درسك'}</p></div>
-          <div className={styles.resultActions}><button className={styles.copyButton} onClick={copyResult}>نسخ النتيجة</button><button className={styles.copyButton} onClick={downloadResult}><Download size={13} style={{verticalAlign:'middle',marginLeft:5}}/>تنزيل TXT</button></div>
-          </div>
-          {result.task === 'quiz' && result.quiz && <div className={styles.quizArea}>
-            <div className={styles.quizSummary}><span>اختبار قصير</span><b>{Object.keys(quizAnswers).length} / {result.quiz.length} إجابات</b></div>
-            <div className={styles.quizProgress}><i style={{width: `${Object.keys(quizAnswers).length / result.quiz.length * 100}%`}} /></div>
-            {result.quiz.map((question, index) => <article className={styles.questionCard} key={index}>
-              <div className={styles.questionMeta}><span>السؤال {index + 1}</span><span>اختيار من متعدد</span></div>
-              <h4>{question.question}</h4>
-              <div className={styles.optionsList}>{question.options.map((option, optionIndex) => {
-                const selected = quizAnswers[index] === optionIndex;
-                const correct = question.answer === optionIndex;
-                const optionClass = quizSubmitted ? (correct ? styles.optionCorrect : selected ? styles.optionWrong : '') : selected ? styles.optionSelected : '';
-                return <button key={optionIndex} className={`${styles.quizOption} ${optionClass}`} disabled={quizSubmitted} onClick={() => setQuizAnswers((current) => ({...current, [index]: optionIndex}))}><span className={styles.optionLetter}>{['أ','ب','ج','د'][optionIndex]}</span><span>{option}</span>{quizSubmitted && correct && <Check size={17}/>}</button>;
-              })}</div>
-              {quizSubmitted && <p className={styles.explanation}><b>التفسير:</b> {question.explanation}</p>}
-            </article>)}
-            <div className={styles.quizFooter}>{quizSubmitted ? <><b>نتيجتك: {result.quiz.filter((q, i) => quizAnswers[i] === q.answer).length} من {result.quiz.length}</b><button className={styles.primaryAction} onClick={() => {setQuizAnswers({});setQuizSubmitted(false);}}>أعد الاختبار</button></> : <button className={styles.primaryAction} onClick={() => setQuizSubmitted(true)} disabled={Object.keys(quizAnswers).length !== result.quiz.length}>تصحيح الإجابات</button>}</div>
-          </div>}
-          {result.task === 'flashcards' && result.cards && <div className={styles.flashArea}>
-            <div className={styles.flashTop}><span>بطاقاتك التعليمية · أتقنت {knownCards.length} من {result.cards.length}</span><b>{flashIndex + 1} <small>/ {result.cards.length}</small></b></div>
-            <button className={`${styles.flashCard} ${flashFlipped ? styles.flashBack : ''}`} onClick={() => setFlashFlipped((value) => !value)} aria-label={flashFlipped ? 'إظهار السؤال' : 'إظهار الإجابة'}>
-              <span className={styles.flashKicker}>{flashFlipped ? 'الإجابة' : 'سؤال للمراجعة'}</span>
-              <span className={styles.flashMain}>{flashFlipped ? result.cards[flashIndex].answer : result.cards[flashIndex].question}</span>
-              <span className={styles.flashHint}><Layers3 size={15}/>{flashFlipped ? 'اضغط للعودة إلى السؤال' : 'اضغط على البطاقة لكشف الإجابة'}</span>
-            </button>
-            <div className={styles.flashRating}><span>هل أتقنت هذه البطاقة؟</span><div><button className={knownCards.includes(flashIndex) ? styles.ratingKnown : ''} onClick={() => setKnownCards((current) => current.includes(flashIndex) ? current : [...current, flashIndex])}><Check size={15}/> أتقنتها</button><button className={!knownCards.includes(flashIndex) ? styles.ratingReview : ''} onClick={() => setKnownCards((current) => current.filter((item) => item !== flashIndex))}>أراجعها لاحقًا</button></div></div>
-            <div className={styles.flashControls}><button disabled={flashIndex === 0} onClick={() => {setFlashIndex((i) => i - 1);setFlashFlipped(false);}}>السابق</button><div className={styles.flashDots}>{result.cards.map((_, i) => <button key={i} aria-label={`البطاقة ${i+1}`} className={i === flashIndex ? styles.flashDotActive : ''} onClick={() => {setFlashIndex(i);setFlashFlipped(false);}} />)}</div><button disabled={flashIndex === result.cards!.length - 1} onClick={() => {setFlashIndex((i) => i + 1);setFlashFlipped(false);}}>التالي <ChevronLeft size={15}/></button></div>
-          </div>}
-          {result.text && <div className={styles.resultText}>{result.text}</div>}
-        </section>}
-
-        <div className={styles.sectionHeading} id="plan"><div><h2>طريقة مذاكرة فعّالة</h2><p>خطوات بسيطة تساعدك على الاستفادة من كل جلسة.</p></div></div>
-        <section className={styles.stepsGrid}><article className={styles.stepCard}><span className={styles.stepNumber}>١</span><div className={styles.stepIcon}><BookOpen size={19}/></div><h3>افهم أولًا</h3><p>ابدأ بملخص أو شرح مبسّط، ولا تحفظ ما لم تفهمه.</p></article><article className={styles.stepCard}><span className={styles.stepNumber}>٢</span><div className={styles.stepIcon}><BrainCircuit size={19}/></div><h3>اختبر نفسك</h3><p>أجب عن الأسئلة دون الرجوع إلى الدرس، ثم راجع أخطاءك.</p></article><article className={styles.stepCard}><span className={styles.stepNumber}>٣</span><div className={styles.stepIcon}><Clock3 size={19}/></div><h3>راجع لاحقًا</h3><p>عد إلى الأفكار الصعبة في اليوم التالي ثم بعد عدة أيام.</p></article></section>
-        <footer className={styles.footer}><span>دَرْبي AI</span><span>تعلّم بذكاء، وتقدّم بخطوات ثابتة.</span><a href="#home">العودة للأعلى ↑</a></footer>
-      </div>
-    </section>
-  </main>;
+          {notice && <div className={styles.notice} role="status"><span><Check size={16}/></span>{notice}<button onClick={() => setNotice('')} aria-label="إغلاق التنبيه"><X size={15}/></button></div>}
+          <footer className={styles.footer}><span><Zap size={15} fill="currentColor"/> مِنجَز</span><span>خطوة صغيرة اليوم، فرق كبير غدًا.</span><a href="#home">العودة للأعلى <ArrowUpLeft size={14}/></a></footer>
+        </div>
+      </section>
+    </main>
+  );
 }

@@ -1,2 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
-:root{--ink:#20213a;--muted:#777a91;--purple:#635bdb;--purple-dark:#5149c8;--line:#e9e9f1;--bg:#f7f8fc;--white:#fff}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',Tahoma,Arial,sans-serif;font-size:14px}button,input,textarea,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.7}a{color:inherit;text-decoration:none}::selection{background:#e4e1ff;color:#342d9d}
+:root{color-scheme:light;--ink:#292742;--muted:#89879f;--accent:#6258d9;--line:#ecebf3;--bg:#f7f8fc;--white:#fff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:20px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',Tahoma,Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.65}
+a{color:inherit;text-decoration:none}
+::selection{background:#e4e1ff;color:#342d9d}
+:focus-visible{outline:3px solid #a49af8;outline-offset:3px}

@@ -176,11 +176,6 @@ export default function Home() {
 
       const distractors = keywords
         .filter((word) => word !== term && !normalized.includes(word) && !usedTerms.has(word))
-        .sort((a, b) => {
-          const frequencyA = (source.match(new RegExp(a.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'giu')) || []).length;
-          const frequencyB = (source.match(new RegExp(b.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'giu')) || []).length;
-          return frequencyB - frequencyA;
-        })
         .slice(0, 3);
       if (distractors.length < 2) continue;
 

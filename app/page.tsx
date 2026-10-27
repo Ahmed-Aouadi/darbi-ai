@@ -1,233 +1,87 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, BadgeCheck, BookOpen, Check, ChevronLeft, CircleHelp, Clock3, Eye, FileText, Fingerprint, LockKeyhole, MessageSquareText, Search, ShieldAlert, Sparkles, Target, X } from 'lucide-react';
+import { ArrowLeft, ArrowUpLeft, Award, BookOpen, Check, ChevronDown, Clock3, Code2, Flame, Menu, Play, Search, Sparkles, Trophy, Users, Zap } from 'lucide-react';
 import styles from './page.module.css';
 
-type Clue = { id: string; title: string; kind: string; text: string; icon: string };
-type Suspect = { id: string; name: string; role: string; statement: string; secret: string };
-
-const cases = [
-  {
-    id: 'museum', level: 'متوسط', duration: '10–15 دقيقة', category: 'سرقة غامضة',
-    title: 'سرقة الجوهرة الزرقاء', location: 'متحف المدينة — قاعة المقتنيات', time: '21:40',
-    intro: 'اختفت جوهرة نادرة من صندوق زجاجي مغلق أثناء انقطاع الكهرباء لمدة 90 ثانية. لم يُكسر الزجاج، ولم يغادر أي شخص المبنى.',
-    report: 'عُثر على الصندوق مفتوحًا عند عودة الإضاءة. سجلّ الباب لم يُظهر أي دخول أو خروج خلال فترة الانقطاع.',
-    clues: [
-      { id: 'c1', title: 'تقرير الكهرباء', kind: 'دليل تقني', text: 'انقطع التيار عن القاعة لمدة 90 ثانية. لكن كاميرا الممر استمرت في التسجيل بفضل بطاريتها الاحتياطية.', icon: '⚡' },
-      { id: 'c2', title: 'بطاقة الدخول', kind: 'سجلّ أمني', text: 'استُخدمت بطاقة أمين المعرض قبل الانقطاع بدقيقتين، ولم تُسجّل أي بطاقة أخرى بعدها.', icon: '🪪' },
-      { id: 'c3', title: 'أثر أزرق', kind: 'أثر مادي', text: 'وُجد مسحوق أزرق دقيق على طرف قفاز قرب الصندوق. الجوهرة نفسها لا تترك مسحوقًا.', icon: '🧤' },
-      { id: 'c4', title: 'توقيت الكاميرا', kind: 'تسجيل مصوّر', text: 'أظهرت الكاميرا شخصًا يحمل مظلة طويلة قبل انقطاع الكهرباء، رغم أن الطقس كان جافًا.', icon: '📹' },
-      { id: 'c5', title: 'فاتورة الترميم', kind: 'وثيقة', text: 'اشترى فنيّ الترميم مسحوقًا أزرق يُستخدم في تلوين النسخ الجبسية قبل يومين.', icon: '🧾' },
-    ],
-    suspects: [
-      { id: 's1', name: 'آدم مراد', role: 'أمين المعرض', statement: 'كنت في مكتب الأرشيف أراجع السجلات. بطاقتي غالبًا بقيت في الدرج.', secret: 'أخفى أنه أعطى بطاقته الاحتياطية لشخص آخر صباحًا.' },
-      { id: 's2', name: 'ليلى بن سالم', role: 'مرمّمة القطع', statement: 'كنت في غرفة الترميم أجهّز نسخة تدريبية. لم أقترب من القاعة.', secret: 'استخدمت مسحوقًا أزرق لصنع نسخة تدريبية من الجوهرة.' },
-      { id: 's3', name: 'سامي قادري', role: 'حارس الأمن', statement: 'تابعت المدخل الرئيسي طوال الليل. لم يدخل أو يخرج أحد.', secret: 'كان يعلم أن كاميرا الممر تعمل ببطارية احتياطية.' },
-      { id: 's4', name: 'نور شريف', role: 'مرشدة المتحف', statement: 'غادرت القاعة قبل الإغلاق، ولم أعد إليها.', secret: 'رأت مظلة طويلة في غرفة الموظفين لكنها لم تذكر ذلك.' },
-    ],
-    solution: 's2',
-    explanation: 'ليلى هي الأقرب إلى الأدلة: مسحوق الترميم الأزرق، والنسخة التدريبية، وتوقيت الانقطاع الذي استُغلّ لاستبدال الجوهرة. المظلة الطويلة كانت تمويهًا لإخفاء الأداة المستخدمة في فتح الصندوق.',
-  },
-  {
-    id: 'studio', level: 'سهل', duration: '8–12 دقيقة', category: 'اختفاء غريب',
-    title: 'الرسالة التي اختفت', location: 'استوديو البث — الطابق الثالث', time: '18:15',
-    intro: 'اختفت رسالة ورقية مهمة من غرفة مغلقة قبل بث مباشر بدقائق. ثلاثة أشخاص دخلوا الاستوديو، وكل واحد يقول إنه لم يرَ الرسالة.',
-    report: 'لم تُفتح النوافذ، والباب لا يعمل إلا ببطاقة. على المكتب كوب ماء بارد وورقة ممزقة من دفتر الملاحظات.',
-    clues: [
-      { id: 'd1', title: 'كوب الماء', kind: 'أثر مادي', text: 'الكوب بارد جدًا، لكن حلقة الماء حوله جافة تقريبًا. يبدو أنه وُضع على المكتب قبل وقت طويل.', icon: '🥛' },
-      { id: 'd2', title: 'سجلّ الباب', kind: 'سجلّ أمني', text: 'دخلت مريم عند 18:02، ثم يوسف عند 18:08، ثم رامي عند 18:12. لم يسجل الباب أي خروج حتى 18:20.', icon: '🚪' },
-      { id: 'd3', title: 'الورقة الممزقة', kind: 'وثيقة', text: 'تحتوي الورقة على نصف جملة: «...النسخة الأصلية في درج الصوت».', icon: '📄' },
-      { id: 'd4', title: 'صندوق الصوت', kind: 'دليل تقني', text: 'درج جهاز الصوت يحتوي على مساحة فارغة بحجم ظرف الرسالة، وبقايا شريط لاصق جديد.', icon: '🎙️' },
-      { id: 'd5', title: 'ملاحظة المخرج', kind: 'شهادة', text: 'قال المخرج إن رامي طلب قبل البث بدقائق أن يختبر جهاز الصوت وحده.', icon: '🗒️' },
-    ],
-    suspects: [
-      { id: 's1', name: 'مريم عادل', role: 'معدة البرنامج', statement: 'وضعت أوراقي على الطاولة ثم خرجت لجلب القهوة.', secret: 'نسيت دفترها مفتوحًا قرب الرسالة.' },
-      { id: 's2', name: 'يوسف ناصر', role: 'المذيع', statement: 'كنت أراجع النص أمام المرآة ولم ألمس المكتب.', secret: 'كان يعرف أن الرسالة تحتوي على معلومة قد تغيّر موضوع الحلقة.' },
-      { id: 's3', name: 'رامي فوزي', role: 'مهندس الصوت', statement: 'اختبرت الميكروفون فقط، ولم أفتح أي درج.', secret: 'طلب وقتًا منفردًا مع جهاز الصوت قبل البث.' },
-    ],
-    solution: 's3',
-    explanation: 'رامي طلب الانفراد بجهاز الصوت، وتطابق حجم الدرج مع الظرف، ووجود الشريط اللاصق يدعم إخفاء الرسالة داخله. الورقة الممزقة كانت تلميحًا إلى مكانها.',
-  },
-  {
-    id: 'lighthouse', level: 'صعب', duration: '15–20 دقيقة', category: 'لغز مغلق',
-    title: 'سرّ المنارة الصامتة', location: 'منارة رأس الضباب', time: '00:07',
-    intro: 'توقفت المنارة عن إرسال إشارتها في ليلة عاصفة، واختفى دفتر الملاحة. لا توجد آثار أقدام في الخارج، والباب كان موصدًا من الداخل.',
-    report: 'وجد فريق الإنقاذ مصباحًا زيتيًا مشتعلًا، وساعة متوقفة، وثلاث قطرات ماء على الأرض رغم أن النوافذ محكمة الإغلاق.',
-    clues: [
-      { id: 'e1', title: 'الساعة المتوقفة', kind: 'دليل زمني', text: 'توقفت الساعة عند 23:47، لكن سجلّ المولد يثبت أن الكهرباء انقطعت عند 00:07 بالضبط.', icon: '🕰️' },
-      { id: 'e2', title: 'قطرات الماء', kind: 'أثر مادي', text: 'قطرات الماء مالحة، وتوجد على الأرض أسفل فتحة تهوية ضيقة تؤدي إلى مخزن الحبال.', icon: '💧' },
-      { id: 'e3', title: 'دفتر الصيانة', kind: 'وثيقة', text: 'سُجّلت صيانة فتحة التهوية قبل يوم واحد، وكتب الفني: «يمكن فتحها من جهة المخزن».', icon: '📘' },
-      { id: 'e4', title: 'المصباح الزيتي', kind: 'أثر مادي', text: 'المصباح حديث الاشتعال، لكن الفتيل قصير جدًا؛ استُخدم على الأرجح لوقت قصير لا طوال الليل.', icon: '🪔' },
-      { id: 'e5', title: 'رسالة لاسلكية', kind: 'تسجيل', text: 'وصلت رسالة مقتضبة قبل الانقطاع: «الطريق آمن، أطفئوا الإشارة». لم يحدد المرسل اسمه.', icon: '📻' },
-    ],
-    suspects: [
-      { id: 's1', name: 'جلال منصور', role: 'حارس المنارة', statement: 'لم أغادر غرفة المراقبة طوال الليل.', secret: 'يعرف أن فتحة التهوية تصل إلى مخزن الحبال.' },
-      { id: 's2', name: 'هدى كمال', role: 'فنية الصيانة', statement: 'أنهيت الصيانة نهارًا، ولم أعد بعد ذلك.', secret: 'هي من كتبت ملاحظة فتحة التهوية في دفتر الصيانة.' },
-      { id: 's3', name: 'بشير طاهر', role: 'صياد محلي', statement: 'كنت في البحر ولم أقترب من المنارة.', secret: 'يستخدم عادةً رسالة لاسلكية قصيرة مع الحارس.' },
-    ],
-    solution: 's1',
-    explanation: 'جلال يعرف فتحة التهوية التي تفسّر قطرات الماء المالحة وطريقة الدخول والخروج دون فتح الباب. الساعة المتوقفة كانت تضليلًا، بينما انقطاع المولد يحدد وقت تعطيل الإشارة.',
-  },
+const challenges = [
+  { id: 1, slug: 'nearest-bus', title: 'أقرب حافلة', topic: 'النقل', level: 'سهل', points: 10, time: 'دقيقتان', icon: '🚌', desc: 'احسب أقرب موعد للحافلة ومدة الانتظار.' },
+  { id: 2, slug: 'market-basket', title: 'ميزان السوق', topic: 'السوق', level: 'سهل', points: 10, time: '3 دقائق', icon: '🧺', desc: 'اجمع ثمن المشتريات وطبّق الخصم المناسب.' },
+  { id: 3, slug: 'class-average', title: 'معدّل الفصل', topic: 'المدرسة', level: 'متوسط', points: 25, time: '5 دقائق', icon: '📚', desc: 'احسب المعدل الموزون حسب معاملات المواد.' },
+  { id: 4, slug: 'wedding-meal', title: 'قدر الوليمة', topic: 'الأعراس', level: 'متوسط', points: 25, time: '6 دقائق', icon: '🍲', desc: 'قدّر عدد القدور التي تكفي الضيوف.' },
+  { id: 5, slug: 'electricity-bill', title: 'فاتورة الكهرباء', topic: 'المنزل', level: 'سهل', points: 10, time: '4 دقائق', icon: '💡', desc: 'احسب الفاتورة وفق شرائح الاستهلاك.' },
+  { id: 6, slug: 'neighborhood-route', title: 'طريق الحي', topic: 'النقل', level: 'صعب', points: 50, time: '10 دقائق', icon: '🗺️', desc: 'ابحث عن أقصر طريق بين حيّين.' },
 ];
 
+const starter = 'function nextBus(now, times) {\n  // اكتب حلّك هنا\n  return ["09:15", 55];\n}';
+
 export default function Home() {
-  const [caseIndex, setCaseIndex] = useState(0);
-  const [screen, setScreen] = useState<'home' | 'case' | 'result'>('home');
-  const [tab, setTab] = useState<'evidence' | 'suspects' | 'notes'>('evidence');
-  const [found, setFound] = useState<string[]>([]);
-  const [questioned, setQuestioned] = useState<string[]>([]);
-  const [selectedSuspect, setSelectedSuspect] = useState('');
-  const [interviewing, setInterviewing] = useState('');
-  const [askedQuestions, setAskedQuestions] = useState<Record<string, string[]>>({});
-  const [interviewLog, setInterviewLog] = useState<{ suspectId: string; question: string; answer: string }[]>([]);
-  const [presentedEvidence, setPresentedEvidence] = useState<Record<string, string[]>>({});
-  const [accusationEvidence, setAccusationEvidence] = useState<string[]>([]);
-  const [notes, setNotes] = useState('');
-  const [showReport, setShowReport] = useState(false);
-  const [showVerdict, setShowVerdict] = useState(false);
-  const [toast, setToast] = useState('');
-  const current = cases[caseIndex];
-  const keyEvidence: Record<string, string[]> = { museum: ['c3', 'c5'], studio: ['d4', 'd5'], lighthouse: ['e2', 'e3'] };
-  const evidenceSupportsAccusation = accusationEvidence.some((id) => keyEvidence[current.id]?.includes(id));
-  const correctVerdict = selectedSuspect === current.solution && evidenceSupportsAccusation;
-  const progress = Math.round(((found.length + questioned.length) / (current.clues.length + current.suspects.length)) * 100);
-  const currentSuspect = useMemo(() => current.suspects.find((s) => s.id === selectedSuspect), [current, selectedSuspect]);
-
-  const startCase = (index: number) => {
-    setCaseIndex(index); setFound([]); setQuestioned([]); setSelectedSuspect(''); setInterviewing(''); setAskedQuestions({}); setInterviewLog([]); setPresentedEvidence({}); setAccusationEvidence([]); setNotes(''); setTab('evidence'); setShowReport(false); setShowVerdict(false); setScreen('case');
-  };
-  const finishCase = () => {
-    if (found.length < 2 || questioned.length < 1) {
-      setToast('افحص دليلين على الأقل واستجوب مشتبهًا واحدًا قبل توجيه الاتهام');
-      return;
-    }
-    setShowVerdict(false);
-    setSelectedSuspect('');
-    setScreen('result');
-  };
-  const clueFound = (id: string) => {
-    if (found.includes(id)) return;
-    setFound((items) => [...items, id]);
-    setToast('أُضيف الدليل إلى ملفك. لا تفترض أنه يثبت الذنب وحده.');
+  const [tab, setTab] = useState('الكل');
+  const [search, setSearch] = useState('');
+  const [code, setCode] = useState(starter);
+  const [ran, setRan] = useState(false);
+  const [solved, setSolved] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const filtered = useMemo(() => challenges.filter(c => (tab === 'الكل' || c.topic === tab) && (c.title + c.desc + c.topic).includes(search)), [tab, search]);
+  const runCode = () => {
+    setRan(true);
+    const hasFunction = /function\s+nextBus\s*\(/.test(code);
+    const hasReturn = /return\s*\[/.test(code);
+    const looksStarter = code.includes('// اكتب حلّك هنا');
+    setSolved(hasFunction && hasReturn && !looksStarter);
   };
 
-  const askQuestion = (suspectId: string, question: string) => {
-    const key = suspectId + ':' + question;
-    if ((askedQuestions[suspectId] || []).includes(question)) return;
-    const suspect = current.suspects.find((s) => s.id === suspectId);
-    if (!suspect) return;
-    const clueCount = found.length;
-    let answer = '';
-    if (question === 'where') {
-      answer = suspect.statement;
-    } else if (question === 'access') {
-      answer = suspectId === current.solution
-        ? 'أعرف المكان، لكن معرفتي به لا تعني أنني دخلت إليه. هل لديك دليل يضعني هناك؟'
-        : 'كانت لديّ أسباب عادية للتواجد في عملي، لكن لا أذكر أنني استخدمت شيئًا خارج مهمتي.';
-    } else {
-      answer = clueCount === 0
-        ? 'أنت تسألني عن التوقيت، لكن لم تعرض عليّ أي سجلّ أو أثر. أحضر دليلًا محددًا وسأجيب عنه.'
-        : suspectId === current.solution
-          ? 'لا أستطيع تأكيد هذا التوقيت من الذاكرة وحدها. ما الدليل الذي تريد مواجهتي به؟'
-          : 'بحسب ما أتذكر، لم ألاحظ شيئًا غير عادي. إن كان لديك سجلّ، يمكننا مقارنته بأقوالي.';
-    }
-    setAskedQuestions((prev) => ({ ...prev, [suspectId]: [...(prev[suspectId] || []), question] }));
-    setQuestioned((prev) => prev.includes(suspectId) ? prev : [...prev, suspectId]);
-    setInterviewLog((prev) => [...prev, { suspectId, question, answer }]);
-  };
+  return <main className={styles.app}>
+    <header className={styles.topbar}>
+      <a className={styles.brand} href="#top" aria-label="سطر - الرئيسية"><span className={styles.brandMark}><Code2 size={22}/></span><span><b>سَطر</b><small>برمج مشاكل حيّك</small></span></a>
+      <nav className={mobileMenu ? styles.navOpen : styles.nav}>
+        <a className={styles.activeNav} href="#challenges">التحديات</a><a href="#how">كيف تعمل؟</a><a href="#league">دوري الأسبوع</a>
+      </nav>
+      <div className={styles.topActions}><button className={styles.login} onClick={() => alert('تسجيل الحساب سيكون متاحًا في المرحلة الثانية.')}>دخول</button><a className={styles.startBtn} href="#try">جرّب مجانًا <ArrowLeft size={16}/></a></div>
+      <button className={styles.menuBtn} onClick={() => setMobileMenu(!mobileMenu)} aria-label="فتح القائمة"><Menu/></button>
+    </header>
 
-  const presentEvidence = (suspectId: string, clueId: string) => {
-    if (!found.includes(clueId)) return;
-    const clue = current.clues.find((item) => item.id === clueId);
-    const already = presentedEvidence[suspectId] || [];
-    if (already.includes(clueId)) return;
-    const response = suspectId === current.solution
-      ? 'يتوقف للحظة قبل الرد: «هذا لا يثبت أنني فعلت شيئًا. هل لديك دليل آخر يربط هذا الأثر بي مباشرة؟»'
-      : 'يلقي نظرة على الدليل: «لم أرَ هذا من قبل. أظن أن عليك مقارنة هذا الأثر ببقية الوقائع قبل استنتاج شيء».';
-    setPresentedEvidence((prev) => ({ ...prev, [suspectId]: [...(prev[suspectId] || []), clueId] }));
-    setInterviewLog((prev) => [...prev, { suspectId, question: 'مواجهة بالدليل: ' + (clue?.title || ''), answer: response }]);
-    setToast('سجّلت ردّ المشتبه به. قارن الردّ مع الأدلة الأخرى.');
-  };
-
-  return (
-    <main className={styles.app} dir="rtl">
-      <header className={styles.topbar}>
-        <button className={styles.brand} onClick={() => setScreen('home')} aria-label="العودة للرئيسية"><span className={styles.brandMark}><Fingerprint size={24} /></span><span><strong>ملف 404</strong><small>غرفة التحقيق</small></span></button>
-        <div className={styles.topCenter}><span className={styles.statusDot} /> أرشيف القضايا <span className={styles.topDivider}>/</span> <span>القسم الجنائي</span></div>
-        <button className={styles.topButton} onClick={() => setShowReport(true)}><CircleHelp size={16} /> كيف ألعب؟</button>
-      </header>
-
-      {screen === 'home' && <section className={styles.home}>
-        <div className={styles.hero}>
-          <div className={styles.heroGrid} />
-          <div className={styles.heroCopy}>
-            <div className={styles.eyebrow}><span /> ملفات سرية — مصنّف 404</div>
-            <h1>كل دليل يحكي قصة.<br /><em>هل ستكتشف الحقيقة؟</em></h1>
-            <p>ادخل غرفة التحقيق، افحص الأدلة، استجوب المشتبه بهم، واكشف ما حدث فعلًا. كل قضية تنتظر عينًا لا يفوتها شيء.</p>
-            <button className={styles.primaryCta} onClick={() => startCase(0)}>ابدأ أول تحقيق <ArrowLeft size={18} /></button>
-            <div className={styles.heroMeta}><span><LockKeyhole size={14} /> قضايا خيالية</span><span><Clock3 size={14} /> 8–20 دقيقة</span><span><Target size={14} /> اختبر ملاحظتك</span></div>
-          </div>
-          <div className={styles.caseArt} aria-hidden="true">
-            <div className={styles.fileCard}><div className={styles.fileTop}><span>CASE FILE</span><span>404-{String(caseIndex + 21).padStart(3, '0')}</span></div><div className={styles.fingerprint}><Fingerprint size={94} strokeWidth={1.1} /></div><div className={styles.redStamp}>سري للغاية</div><div className={styles.fileLines}><i /><i /><i /></div><div className={styles.fileBottom}>ARCHIVE / EVIDENCE UNIT</div></div>
-            <span className={styles.artPin} /><span className={styles.artString} /><span className={styles.artLabel}>NO. 004 / ACTIVE</span>
-          </div>
+    <section className={styles.hero} id="top">
+      <div className={styles.heroCopy}>
+        <div className={styles.eyebrow}><span className={styles.liveDot}/> البرمجة تبدأ من حومتك</div>
+        <h1>عندك مشكلة في الحي؟<br/><em>برمج لها حلّ.</em></h1>
+        <p>تحديات برمجية مستوحاة من حياتنا في الجزائر. حلّها بكودك، تعلّم خطوة بخطوة، وتحدّى صحابك كل أسبوع.</p>
+        <div className={styles.heroActions}><a className={styles.primaryBtn} href="#try">ابدأ أول تحدٍّ <ArrowLeft size={18}/></a><a className={styles.secondaryBtn} href="#challenges">اكتشف التحديات <ArrowUpLeft size={17}/></a></div>
+        <div className={styles.socialProof}><div className={styles.avatars}><span>م</span><span>ي</span><span>س</span><span>+ </span></div><span><b>تعلّم بالتطبيق، مش بالحفظ</b><small>مناسب للمبتدئين — بلا تسجيل</small></span></div>
+      </div>
+      <div className={styles.heroVisual}>
+        <div className={styles.decorCircle}/><div className={styles.codeCard}>
+          <div className={styles.codeTop}><span className={styles.windowDots}><i/><i/><i/></span><span>challenge.js</span><span className={styles.jsBadge}>JS</span></div>
+          <div className={styles.codeBody}><div><span className={styles.lineNo}>01</span><span className={styles.codePurple}>function</span> <span className={styles.codeBlue}>nextBus</span>(now, times) {'{'}</div><div><span className={styles.lineNo}>02</span> &nbsp;<span className={styles.codeGray}>// وقتاش تجي الحافلة؟</span></div><div><span className={styles.lineNo}>03</span> &nbsp;<span className={styles.codePurple}>return</span> findNearest(now, times);</div><div><span className={styles.lineNo}>04</span>{'}'}</div></div>
+          <div className={styles.passCard}><span><Check size={16}/></span><div><b>اختبار ناجح!</b><small>الانتظار: ٥٥ دقيقة</small></div><strong>+١٠ XP</strong></div>
         </div>
-        <div className={styles.sectionHead}><div><span className={styles.sectionKicker}>اختر ملفك</span><h2>قضايا تنتظر الحل</h2><p>كل قضية مستقلة، بأدلة وشخصيات ونهاية خاصة.</p></div><span className={styles.caseCount}>03 ملفات متاحة</span></div>
-        <div className={styles.caseGrid}>
-          {cases.map((item, index) => <article className={styles.caseCard} key={item.id}>
-            <div className={styles.caseThumb + ' ' + styles['thumb' + index]}><span className={styles.caseNumber}>CASE / 0{index + 1}</span><span className={styles.thumbIcon}>{index === 0 ? '◆' : index === 1 ? '◉' : '☼'}</span><span className={styles.caseLevel}>{item.level}</span></div>
-            <div className={styles.caseCardBody}><div className={styles.caseType}>{item.category}</div><h3>{item.title}</h3><p>{item.intro}</p><div className={styles.caseCardFoot}><span><Clock3 size={14} /> {item.duration}</span><button onClick={() => startCase(index)}>فتح الملف <ChevronLeft size={16} /></button></div></div>
-          </article>)}
-        </div>
-        <div className={styles.homeFoot}><ShieldAlert size={16} /><span>جميع القضايا والشخصيات خيالية، صُممت لاختبار المنطق والانتباه.</span><span className={styles.footCode}>404 / ARCHIVE</span></div>
-      </section>}
+        <div className={styles.floatTag}><span>🚌</span><div><b>أقرب حافلة</b><small>تحدّي الأسبوع</small></div><span className={styles.tagArrow}><ArrowUpLeft size={16}/></span></div>
+        <div className={styles.heroStat}><Zap size={17}/><span>تصحيح فوري</span></div>
+      </div>
+    </section>
 
-      {screen === 'case' && <section className={styles.workspace}>
-        <div className={styles.workspaceTop}><button className={styles.backButton} onClick={() => setScreen('home')}><ArrowRight size={17} /> كل القضايا</button><div className={styles.caseCrumb}>ملف <b>404-{String(caseIndex + 21).padStart(3, '0')}</b><span>/</span>{current.category}</div><div className={styles.caseTimer}><span className={styles.statusDot} /> التحقيق جارٍ</div></div>
-        <div className={styles.caseBanner}><div><span className={styles.sectionKicker}>ملف القضية / {current.location}</span><h1>{current.title}</h1><p>{current.intro}</p></div><div className={styles.bannerSeal}><Fingerprint size={36} /><span>قيد التحقيق</span></div></div>
-        <div className={styles.progressRow}><div><span>تقدم التحقيق</span><b>{progress}%</b></div><div className={styles.progressTrack}><span style={{ width: progress + '%' }} /></div><span>{found.length + questioned.length} / {current.clues.length + current.suspects.length} عناصر مفحوصة</span></div>
-        <div className={styles.workGrid}>
-          <section className={styles.panel}>
-            <div className={styles.panelTabs}>
-              <button className={tab === 'evidence' ? styles.activeTab : ''} onClick={() => setTab('evidence')}><Search size={16} /> الأدلة <span>{found.length}/{current.clues.length}</span></button>
-              <button className={tab === 'suspects' ? styles.activeTab : ''} onClick={() => setTab('suspects')}><Eye size={16} /> المشتبه بهم <span>{questioned.length}/{current.suspects.length}</span></button>
-              <button className={tab === 'notes' ? styles.activeTab : ''} onClick={() => setTab('notes')}><FileText size={16} /> ملاحظاتي</button>
-            </div>
-            {tab === 'evidence' && <div className={styles.evidenceList}>{current.clues.map((clue) => <article key={clue.id} className={styles.evidenceCard}><div className={styles.evidenceIcon}>{clue.icon}</div><div className={styles.evidenceBody}><div className={styles.evidenceMeta}><span>{clue.kind}</span>{found.includes(clue.id) && <span className={styles.examined}><Check size={12} /> تمت المعاينة</span>}</div><h3>{clue.title}</h3><p>{found.includes(clue.id) ? clue.text : 'افتح هذا الدليل لفحص التفاصيل واكتشاف ما قد يخفيه.'}</p>{!found.includes(clue.id) && <button className={styles.inspectButton} onClick={() => clueFound(clue.id)}>فحص الدليل <ArrowLeft size={14} /></button>}</div></article>)}</div>}
-            {tab === 'suspects' && <div className={styles.suspectList}>
-              <div className={styles.interviewIntro}><strong>غرفة الاستجواب</strong><p>اختر شخصًا، ثم حدّد سؤالًا. لن تُكشف الأسرار تلقائيًا؛ اجمع الأدلة أولًا وواجهه بما وجدته.</p></div>
-              {current.suspects.map((suspect) => <article className={styles.suspectCard} key={suspect.id}><div className={styles.suspectAvatar}>{suspect.name.slice(0, 1)}</div><div className={styles.suspectBody}><div className={styles.evidenceMeta}><span>{suspect.role}</span>{questioned.includes(suspect.id) && <span className={styles.examined}><Check size={12} /> جرى الحديث</span>}</div><h3>{suspect.name}</h3><p>{questioned.includes(suspect.id) ? 'تم تسجيل بعض الأقوال. يمكنك متابعة الأسئلة أو عرض دليل.' : 'لم تُسجّل إفادته بعد.'}</p><button className={styles.inspectButton} onClick={() => setInterviewing(interviewing === suspect.id ? '' : suspect.id)}>{interviewing === suspect.id ? 'إغلاق الاستجواب' : 'فتح الاستجواب'} <ArrowLeft size={14} /></button>
-                {interviewing === suspect.id && <div className={styles.interviewBox}><strong>ما الذي تريد سؤاله؟</strong><div className={styles.questionChoices}>{[{id:'where',label:'أين كنت وقت الحادث؟'},{id:'access',label:'هل كان بإمكانك الوصول إلى المكان؟'},{id:'time',label:'ماذا تعرف عن توقيت الحادث؟'}].map((q) => <button key={q.id} disabled={(askedQuestions[suspect.id] || []).includes(q.id)} onClick={() => askQuestion(suspect.id, q.id)}>{q.label}{(askedQuestions[suspect.id] || []).includes(q.id) && <Check size={13} />}</button>)}</div>
-                  <strong>واجهه بدليل عثرت عليه</strong><p className={styles.interviewHelp}>لا يمكنك عرض دليل لم تفحصه بعد.</p><div className={styles.questionChoices}>{current.clues.filter((clue) => found.includes(clue.id)).map((clue) => <button key={clue.id} disabled={(presentedEvidence[suspect.id] || []).includes(clue.id)} onClick={() => presentEvidence(suspect.id, clue.id)}>{clue.icon} {clue.title}</button>)}</div>
-                </div>}
-              </div></article>)}
-              {interviewLog.length > 0 && <div className={styles.interviewLog}><strong>محضر الاستجواب</strong>{interviewLog.slice().reverse().map((entry, idx) => <div key={entry.suspectId + entry.question + idx}><span>{current.suspects.find((s) => s.id === entry.suspectId)?.name} — {entry.question}</span><p>{entry.answer}</p></div>)}</div>}
-            </div>}
-            {tab === 'notes' && <div className={styles.notesPane}><div className={styles.notesTitle}><FileText size={18} /><div><strong>دفتر المحقق</strong><span>ملاحظاتك خاصة بهذه الجلسة</span></div></div><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="دوّن التناقضات، اربط الأدلة ببعضها، واكتب فرضيتك هنا..." /><div className={styles.notesHint}>تلميح: قارن التوقيت مع الأدلة المادية قبل توجيه الاتهام.</div></div>}
-          </section>
-          <aside className={styles.sidePanel}>
-            <div className={styles.sidePanelHead}><span className={styles.miniIcon}><BookOpen size={17} /></span><div><h3>ملخص القضية</h3><p>المعلومات الأولية</p></div></div>
-            <div className={styles.briefRow}><span>الموقع</span><strong>{current.location}</strong></div><div className={styles.briefRow}><span>وقت الحادث</span><strong>{current.time}</strong></div><div className={styles.briefRow}><span>مستوى الصعوبة</span><strong>{current.level}</strong></div>
-            <div className={styles.reportBox}><span><ShieldAlert size={15} /> تقرير أولي</span><p>{current.report}</p></div>
-            <div className={styles.readyBox}><div className={styles.readyIcon}><Target size={18} /></div><strong>هل كوّنت فرضيتك؟</strong><p>راجع الأدلة وأقوال الجميع قبل اختيار المتهم.</p><button onClick={finishCase}>توجيه الاتهام <ArrowLeft size={15} /></button></div>
-            <button className={styles.hintButton} onClick={() => setShowReport(true)}><CircleHelp size={15} /> طريقة اللعب والتلميحات</button>
-          </aside>
-        </div>
-      </section>}
+    <section className={styles.statsStrip}>
+      <div><span className={styles.statIcon}><Code2/></span><p><b>15+</b><small>تحديًا من واقعنا</small></p></div><div><span className={styles.statIcon}><Users/></span><p><b>دوري الأصدقاء</b><small>نافس جماعتك كل أسبوع</small></p></div><div><span className={styles.statIcon}><Flame/></span><p><b>خطوة بخطوة</b><small>من أول سطر حتى الاحتراف</small></p></div><div><span className={styles.statIcon}><Trophy/></span><p><b>اجمع النقاط</b><small>وافتح شارات جديدة</small></p></div>
+    </section>
 
-      {screen === 'result' && <section className={styles.resultScreen}>
-        <div className={styles.resultCard}><div className={styles.resultSeal}><Target size={35} /></div><span className={styles.sectionKicker}>المرحلة الأخيرة / توجيه الاتهام</span><h1>من تعتقد أنه المسؤول؟</h1><p>اختر الشخص الذي ترى أن الأدلة تشير إليه. فكّر جيدًا، فليس كل من يخفي سرًا هو الجاني.</p>
-          <div className={styles.accusationList}>{current.suspects.map((suspect) => <button key={suspect.id} className={selectedSuspect === suspect.id ? styles.selectedAccusation : styles.accusationOption} onClick={() => setSelectedSuspect(suspect.id)}><span className={styles.accusationAvatar}>{suspect.name.slice(0, 1)}</span><span><strong>{suspect.name}</strong><small>{suspect.role}</small></span><span className={styles.radioMark}>{selectedSuspect === suspect.id ? <Check size={14} /> : null}</span></button>)}</div>
-          <strong className={styles.evidencePickTitle}>ما الدليل الذي يدعم اتهامك؟ اختر دليلين على الأقل.</strong>
-          <div className={styles.accusationEvidence}>{current.clues.filter((clue) => found.includes(clue.id)).map((clue) => <button key={clue.id} className={accusationEvidence.includes(clue.id) ? styles.evidenceChosen : ''} onClick={() => setAccusationEvidence((prev) => prev.includes(clue.id) ? prev.filter((id) => id !== clue.id) : [...prev, clue.id])}><span>{clue.icon}</span>{clue.title}<span>{accusationEvidence.includes(clue.id) ? '✓' : '+'}</span></button>)}</div>
-          <button className={styles.primaryCta + ' ' + styles.submitAccusation} disabled={!selectedSuspect || accusationEvidence.length < 2} onClick={() => setShowVerdict(true)}>تقديم الاتهام والأدلة <ArrowLeft size={17} /></button>
-          {showVerdict && selectedSuspect && <div className={styles.verdict}><div className={correctVerdict ? styles.verdictGood : styles.verdictBad}>{selectedSuspect === current.solution ? <BadgeCheck size={23} /> : <ShieldAlert size={23} />}<strong>{correctVerdict ? 'اتهام مدعوم بالأدلة!' : selectedSuspect === current.solution ? 'المتهم صحيح، لكن أدلتك لا تثبت ذلك بعد' : 'اتهام غير صحيح'}</strong></div><p>{correctVerdict ? current.explanation : selectedSuspect === current.solution ? 'اخترت الشخص الصحيح، لكن الأدلة التي قدمتها لا تتضمن رابطًا حاسمًا بعد. أعد التحقيق واختر أدلة أقوى.' : current.explanation}</p><p className={styles.submittedEvidenceNote}>الأدلة التي استندت إليها: {current.clues.filter((clue) => accusationEvidence.includes(clue.id)).map((clue) => clue.title).join('، ')}.</p><div className={styles.trueCulprit}>المسؤول في هذه القضية: <b>{current.suspects.find((s) => s.id === current.solution)?.name}</b></div><button className={styles.secondaryCta} onClick={() => startCase(caseIndex)}>إعادة التحقيق <ArrowRight size={15} /></button><button className={styles.secondaryCta} onClick={() => setScreen('home')}>العودة إلى الأرشيف <ArrowLeft size={15} /></button></div>}
-        </div>
-      </section>}
+    <section className={styles.trySection} id="try">
+      <div className={styles.sectionIntro}><div><span className={styles.kicker}>جرّب بنفسك</span><h2>أول تحدٍّ في أقل من دقيقتين</h2><p>ما تحتاجش حساب. عدّل الدالة واضغط شغّل باش تجرب.</p></div><span className={styles.challengeNumber}>التحدّي 01 <b>من 15</b></span></div>
+      <div className={styles.tryGrid}>
+        <article className={styles.problemPanel}><div className={styles.panelLabel}><span>🚌</span><span>النقل</span><span className={styles.levelEasy}>سهل · 10 نقاط</span></div><h3>أقرب حافلة</h3><p>راك تستنّى الحافلة في محطة وسط المدينة. عندك جدول المواعيد وحاب تعرف أقرب حافلة ووقتاش توصل.</p><div className={styles.taskBox}><b>المطلوب</b><p>اكتب دالة <code>nextBus(now, times)</code> ترجع موعد الحافلة القادمة وعدد دقائق الانتظار.</p></div><div className={styles.exampleBox}><div><span>المدخل</span><code>"08:20", ["06:30", "09:15"]</code></div><ArrowLeft size={17}/><div><span>الناتج المتوقع</span><code>["09:15", 55]</code></div></div><div className={styles.tip}><Sparkles size={17}/><span><b>تلميح:</b> حوّل الوقت إلى دقائق منذ منتصف الليل لتسهّل المقارنة.</span></div></article>
+        <article className={styles.editorPanel}><div className={styles.editorHead}><div><span className={styles.editorDot}/><b>محرّر الكود</b></div><button className={styles.languageBtn}>JavaScript <ChevronDown size={14}/></button></div><div className={styles.editorWrap}><div className={styles.lineNums}>1<br/>2<br/>3<br/>4</div><textarea aria-label="محرر JavaScript" spellCheck={false} dir="ltr" value={code} onChange={e => {setCode(e.target.value);setRan(false);setSolved(false)}}/></div><div className={styles.editorFoot}><span><span className={styles.statusDot}/> JavaScript</span><span>تُحفظ مسودتك محليًا</span></div><div className={styles.runRow}><button className={styles.runBtn} onClick={runCode}><Play size={16} fill="currentColor"/> شغّل الاختبارات</button><span>⏱ 3 ثوانٍ كحد أقصى</span></div>{ran && <div className={solved ? styles.resultSuccess : styles.resultFail}><span>{solved ? <Check size={18}/> : <Clock3 size={18}/>}</span><div><b>{solved ? 'اجتزت الاختبار الظاهر!' : 'ما زال الحل يحتاج تعديلًا'}</b><p>{solved ? 'ممتاز! يمكنك الآن الانتقال إلى التحدّي التالي.' : 'تأكد من كتابة دالة nextBus وإرجاع مصفوفة. غيّر الكود ثم جرّب مجددًا.'}</p></div></div>}</article>
+      </div>
+      <p className={styles.disclaimer}>نسخة تجريبية للواجهة — التصحيح هنا يفحص بنية الحل فقط، وسيُستبدل بمشغّل اختبارات معزول في استكمال المرحلة الأولى.</p>
+    </section>
 
-      {showReport && <div className={styles.modalOverlay} onMouseDown={(e) => { if (e.target === e.currentTarget) setShowReport(false); }}><section className={styles.helpModal}><button className={styles.modalClose} onClick={() => setShowReport(false)}><X size={18} /></button><span className={styles.helpModalIcon}><CircleHelp size={25} /></span><span className={styles.sectionKicker}>دليل المحقق</span><h2>كيف تلعب ملف 404؟</h2><div className={styles.helpStep}><span>01</span><div><strong>افحص الأدلة</strong><p>افتح كل دليل واقرأ تفاصيله. قد تكون معلومة صغيرة هي مفتاح الحل.</p></div></div><div className={styles.helpStep}><span>02</span><div><strong>استجوب المشتبه بهم</strong><p>اقرأ أقوالهم والأسرار التي قد تتعارض مع الأدلة.</p></div></div><div className={styles.helpStep}><span>03</span><div><strong>دوّن فرضيتك</strong><p>استخدم دفتر المحقق لربط التوقيت والدوافع والآثار.</p></div></div><div className={styles.helpStep}><span>04</span><div><strong>وجّه الاتهام</strong><p>اختر الشخص الذي تفسر الأدلة تصرفاته، ثم اكشف الحقيقة.</p></div></div><button className={styles.primaryCta} onClick={() => setShowReport(false)}>فهمت، لنحقق! <ArrowLeft size={16} /></button></section></div>}
-      {toast && <div className={styles.toast}><Check size={16} /> {toast}<button onClick={() => setToast('')}><X size={14} /></button></div>}
-    </main>
-  );
+    <section className={styles.challengeSection} id="challenges"><div className={styles.sectionIntro}><div><span className={styles.kicker}>اختار مشكلتك</span><h2>تحديات تشبه حياتنا</h2><p>كل تحدٍّ حكاية من الواقع، وكل حلّ يقرّبك من مستوى جديد.</p></div><a href="#try" className={styles.textLink}>ابدأ من السهل <ArrowLeft size={16}/></a></div>
+      <div className={styles.filters}><div className={styles.searchBox}><Search size={18}/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث عن تحدٍّ..." aria-label="بحث عن تحدٍّ"/></div><div className={styles.filterChips}>{['الكل','النقل','السوق','المدرسة','الأعراس','المنزل'].map(t => <button key={t} className={tab === t ? styles.chipActive : styles.chip} onClick={() => setTab(t)}>{t}</button>)}</div></div>
+      <div className={styles.challengeGrid}>{filtered.map(c => <article className={styles.challengeCard} key={c.id}><div className={styles.challengeCardTop}><span className={styles.challengeEmoji}>{c.icon}</span><span className={c.level === 'سهل' ? styles.levelEasy : c.level === 'متوسط' ? styles.levelMedium : styles.levelHard}>{c.level}</span></div><span className={styles.topic}>{c.topic}</span><h3>{c.title}</h3><p>{c.desc}</p><div className={styles.cardMeta}><span><Award size={15}/>{c.points} نقطة</span><span><Clock3 size={15}/>{c.time}</span></div><a href="#try" className={styles.cardLink}>حلّ التحدّي <ArrowLeft size={15}/></a></article>)}</div>
+      {filtered.length === 0 && <div className={styles.emptyState}>ما لقيناش تحديات بهذه الكلمات. جرّب بحثًا آخر.</div>}
+    </section>
+
+    <section className={styles.howSection} id="how"><div className={styles.sectionIntro}><div><span className={styles.kicker}>بسيطة كيما لازم</span><h2>ثلاث خطوات وتولي تبرمج</h2></div></div><div className={styles.steps}><article><span>01</span><BookOpen/><h3>افهم المشكل</h3><p>اقرأ القصة والمطلوب والأمثلة، بلا تعقيد.</p></article><article><span>02</span><Code2/><h3>جرّب كودك</h3><p>اكتب JavaScript وشوف النتيجة في ثوانٍ.</p></article><article><span>03</span><Trophy/><h3>اجمع النقاط</h3><p>حلّ أكثر، افتح الشارات، وتحدّى صحابك.</p></article></div></section>
+
+    <section className={styles.leagueBanner} id="league"><div className={styles.leagueIcon}><Trophy size={30}/></div><div><span>كل أسبوع حكاية جديدة</span><h2>واشكون مبرمج الحومة؟</h2><p>حلّ تحديات الأسبوع، اجمع النقاط، ونافس أصحابك بروح رياضية.</p></div><button onClick={() => alert('دوري الأسبوع وغرف الأصدقاء ضمن المراحل القادمة.')}>اكتشف الدوري <ArrowLeft size={17}/></button><div className={styles.leagueDecoration}>#01</div></section>
+    <footer className={styles.footer}><a className={styles.brand} href="#top"><span className={styles.brandMark}><Code2 size={20}/></span><span><b>سَطر</b><small>برمج مشاكل حيّك</small></span></a><span>تعلّم البرمجة من واقعك اليومي.</span><span>صُنع بحبّ في الجزائر 🇩🇿</span></footer>
+  </main>;
 }

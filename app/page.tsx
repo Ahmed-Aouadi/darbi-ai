@@ -79,14 +79,14 @@ export default function Home() {
   const [questioned, setQuestioned] = useState<string[]>([]);
   const [selectedSuspect, setSelectedSuspect] = useState('');
   const [notes, setNotes] = useState('');
-  const [showReport, setShowReport] = useState(false);
+  const [showReport, setShowReport] = useState(false);\n  const [showVerdict, setShowVerdict] = useState(false);
   const [toast, setToast] = useState('');
   const current = cases[caseIndex];
   const progress = Math.round(((found.length + questioned.length) / (current.clues.length + current.suspects.length)) * 100);
   const currentSuspect = useMemo(() => current.suspects.find((s) => s.id === selectedSuspect), [current, selectedSuspect]);
 
   const startCase = (index: number) => {
-    setCaseIndex(index); setFound([]); setQuestioned([]); setSelectedSuspect(''); setNotes(''); setTab('evidence'); setShowReport(false); setScreen('case');
+    setCaseIndex(index); setFound([]); setQuestioned([]); setSelectedSuspect(''); setNotes(''); setTab('evidence'); setShowReport(false); setShowVerdict(false); setScreen('case');
   };
   const finishCase = () => setScreen('result');
   const clueFound = (id: string) => {
@@ -156,8 +156,8 @@ export default function Home() {
       {screen === 'result' && <section className={styles.resultScreen}>
         <div className={styles.resultCard}><div className={styles.resultSeal}><Target size={35} /></div><span className={styles.sectionKicker}>المرحلة الأخيرة / توجيه الاتهام</span><h1>من تعتقد أنه المسؤول؟</h1><p>اختر الشخص الذي ترى أن الأدلة تشير إليه. فكّر جيدًا، فليس كل من يخفي سرًا هو الجاني.</p>
           <div className={styles.accusationList}>{current.suspects.map((suspect) => <button key={suspect.id} className={selectedSuspect === suspect.id ? styles.selectedAccusation : styles.accusationOption} onClick={() => setSelectedSuspect(suspect.id)}><span className={styles.accusationAvatar}>{suspect.name.slice(0, 1)}</span><span><strong>{suspect.name}</strong><small>{suspect.role}</small></span><span className={styles.radioMark}>{selectedSuspect === suspect.id ? <Check size={14} /> : null}</span></button>)}</div>
-          <button className={styles.primaryCta + ' ' + styles.submitAccusation} disabled={!selectedSuspect} onClick={() => setScreen('result')}>كشف الحقيقة <ArrowLeft size={17} /></button>
-          {selectedSuspect && <div className={styles.verdict}><div className={selectedSuspect === current.solution ? styles.verdictGood : styles.verdictBad}>{selectedSuspect === current.solution ? <BadgeCheck size={23} /> : <ShieldAlert size={23} />}<strong>{selectedSuspect === current.solution ? 'أحسنت! اتهام صحيح' : 'اتهام غير صحيح'}</strong></div><p>{current.explanation}</p><div className={styles.trueCulprit}>المسؤول في هذه القضية: <b>{current.suspects.find((s) => s.id === current.solution)?.name}</b></div><button className={styles.secondaryCta} onClick={() => startCase(caseIndex)}>إعادة التحقيق <ArrowRight size={15} /></button><button className={styles.secondaryCta} onClick={() => setScreen('home')}>العودة إلى الأرشيف <ArrowLeft size={15} /></button></div>}
+          <button className={styles.primaryCta + ' ' + styles.submitAccusation} disabled={!selectedSuspect} onClick={() => setShowVerdict(true)}>كشف الحقيقة <ArrowLeft size={17} /></button>
+          {showVerdict && selectedSuspect && <div className={styles.verdict}><div className={selectedSuspect === current.solution ? styles.verdictGood : styles.verdictBad}>{selectedSuspect === current.solution ? <BadgeCheck size={23} /> : <ShieldAlert size={23} />}<strong>{selectedSuspect === current.solution ? 'أحسنت! اتهام صحيح' : 'اتهام غير صحيح'}</strong></div><p>{current.explanation}</p><div className={styles.trueCulprit}>المسؤول في هذه القضية: <b>{current.suspects.find((s) => s.id === current.solution)?.name}</b></div><button className={styles.secondaryCta} onClick={() => startCase(caseIndex)}>إعادة التحقيق <ArrowRight size={15} /></button><button className={styles.secondaryCta} onClick={() => setScreen('home')}>العودة إلى الأرشيف <ArrowLeft size={15} /></button></div>}
         </div>
       </section>}
 

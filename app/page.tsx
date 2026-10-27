@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowDownLeft, ArrowUpLeft, BadgePercent, Box, Check, ChevronDown, CirclePlus,
-  ClipboardList, ExternalLink, Eye, Heart, LayoutGrid, MessageCircle, Package,
+  Eye, LayoutGrid, MessageCircle, Package,
   Plus, Search, Settings2, Share2, ShoppingBag, SlidersHorizontal, Sparkles,
   Store, Trash2, TrendingUp, X
 } from 'lucide-react';

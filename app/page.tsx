@@ -55,8 +55,8 @@ export default function Home() {
   const selectedTask = tasks.find((task) => task.id === selectedTaskId && !task.done) || tasks.find((task) => !task.done);
   const timerTotal = mode === 'focus' ? 25 * 60 : 5 * 60;
   const timerProgress = Math.max(0, Math.min(100, (secondsLeft / timerTotal) * 100));
-  const todayIndex = (today.getDay() + 6) % 7;
-  const weekly = useMemo(() => weekdays.map((day, index) => ({ ...day, today: index === todayIndex, complete: index < todayIndex })), [todayIndex]);
+  const todayIndex = (today.getDay() + 1) % 7;
+  const weekly = useMemo(() => weekdays.map((day, index) => ({ ...day, today: index === todayIndex, complete: false })), [todayIndex]);
 
   useEffect(() => {
     try {
@@ -77,25 +77,23 @@ export default function Home() {
   }, [tasks, sessions, loaded]);
 
   useEffect(() => {
-    if (!running) return;
+    if (!running || secondsLeft <= 0) return;
     const interval = window.setInterval(() => {
-      setSecondsLeft((current) => {
-        if (current <= 1) {
-          window.clearInterval(interval);
-          setRunning(false);
-          if (mode === 'focus') {
-            setSessions((count) => count + 1);
-            setNotice('أحسنت! انتهت جلسة تركيز. خذ نفسًا عميقًا قبل المتابعة.');
-          } else {
-            setNotice('انتهت الاستراحة. أنت جاهز لجولة جديدة.');
-          }
-          return 0;
-        }
-        return current - 1;
-      });
+      setSecondsLeft((current) => Math.max(0, current - 1));
     }, 1000);
     return () => window.clearInterval(interval);
-  }, [running, mode]);
+  }, [running, secondsLeft]);
+
+  useEffect(() => {
+    if (!running || secondsLeft !== 0) return;
+    setRunning(false);
+    if (mode === 'focus') {
+      setSessions((count) => count + 1);
+      setNotice('أحسنت! انتهت جلسة تركيز. خذ نفسًا عميقًا قبل المتابعة.');
+    } else {
+      setNotice('انتهت الاستراحة. أنت جاهز لجولة جديدة.');
+    }
+  }, [secondsLeft, running, mode]);
 
   function changeMode(nextMode: TimerMode) {
     setRunning(false);

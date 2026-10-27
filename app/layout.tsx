@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'مِنجَز — خطط دراستك وأنجزها خطوة بخطوة',
-  description: 'مساحة عربية لتنظيم مهامك الدراسية، جلسات التركيز، والاستراحات. خطتك محفوظة على جهازك دون حساب أو اشتراك.',
-  applicationName: 'مِنجَز',
-  keywords: ['تنظيم الدراسة', 'مؤقت تركيز', 'بومودورو', 'مهام دراسية', 'إنتاجية الطلاب'],
+  title: 'سوقي — كتالوجك التجاري في مكان واحد',
+  description: 'أنشئ كتالوج منتجاتك، نظّم الأسعار والمخزون، واستقبل طلبات زبائنك عبر واتساب.',
+  applicationName: 'سوقي',
+  keywords: ['كتالوج منتجات', 'إدارة متجر', 'مشاريع صغيرة', 'بيع عبر واتساب', 'تجارة إلكترونية'],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

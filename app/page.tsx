@@ -29,6 +29,7 @@ export default function Home() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [flashIndex, setFlashIndex] = useState(0);
   const [flashFlipped, setFlashFlipped] = useState(false);
+  const [knownCards, setKnownCards] = useState<number[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
 
   async function extractPdf(file: File) {
@@ -150,7 +151,7 @@ export default function Home() {
   async function runTask(task: Task) {
     setActiveTask(task); setError('');
     if (lesson.trim().length < 30) { setError('أضف نص الدرس أو ارفع ملفًا أولًا (30 حرفًا على الأقل).'); return; }
-    setBusy(true); setResult(null); setQuizAnswers({}); setQuizSubmitted(false); setFlashIndex(0); setFlashFlipped(false);
+    setBusy(true); setResult(null); setQuizAnswers({}); setQuizSubmitted(false); setFlashIndex(0); setFlashFlipped(false); setKnownCards([]);
     try {
       await new Promise((resolve) => setTimeout(resolve, 120));
       if (task === 'quiz') {
@@ -225,7 +226,7 @@ export default function Home() {
             <div className={styles.quizFooter}>{quizSubmitted ? <><b>نتيجتك: {result.quiz.filter((q, i) => quizAnswers[i] === q.answer).length} من {result.quiz.length}</b><button className={styles.primaryAction} onClick={() => {setQuizAnswers({});setQuizSubmitted(false);}}>أعد الاختبار</button></> : <button className={styles.primaryAction} onClick={() => setQuizSubmitted(true)} disabled={Object.keys(quizAnswers).length !== result.quiz.length}>تصحيح الإجابات</button>}</div>
           </div>}
           {result.task === 'flashcards' && result.cards && <div className={styles.flashArea}>
-            <div className={styles.flashTop}><span>بطاقاتك التعليمية</span><b>{flashIndex + 1} <small>/ {result.cards.length}</small></b></div>
+            <div className={styles.flashTop}><span>بطاقاتك التعليمية · أتقنت {knownCards.length} من {result.cards.length}</span><b>{flashIndex + 1} <small>/ {result.cards.length}</small></b></div>
             <button className={`${styles.flashCard} ${flashFlipped ? styles.flashBack : ''}`} onClick={() => setFlashFlipped((value) => !value)} aria-label={flashFlipped ? 'إظهار السؤال' : 'إظهار الإجابة'}>
               <span className={styles.flashKicker}>{flashFlipped ? 'الإجابة' : 'سؤال للمراجعة'}</span>
               <span className={styles.flashMain}>{flashFlipped ? result.cards[flashIndex].answer : result.cards[flashIndex].question}</span>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { BookOpen, BrainCircuit, CalendarDays, Check, ChevronLeft, CircleHelp, Clock3, FileText, GraduationCap, Layers3, Lightbulb, LoaderCircle, Menu, MessageCircle, Plus, Sparkles, Target, Upload, X } from 'lucide-react';
+import { BookOpen, BrainCircuit, CalendarDays, Check, ChevronLeft, CircleHelp, Clock3, FileText, GraduationCap, Layers3, Lightbulb, LoaderCircle, Menu, MessageCircle, Sparkles, Target, Upload, X } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import styles from './page.module.css';
@@ -22,7 +22,6 @@ export default function Home() {
   const [activeTask, setActiveTask] = useState<Task>('summary');
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState('');
-  const [language, setLanguage] = useState('العربية');
   const fileInput = useRef<HTMLInputElement>(null);
 
   async function extractPdf(file: File) {
@@ -137,7 +136,7 @@ export default function Home() {
           <div className={styles.inputHead}><div className={styles.inputTitleIcon}><FileText size={20}/></div><div><h3>ما الدرس الذي تراجعه اليوم؟</h3><p>الصق نص الدرس أو ارفع ملفًا. تتم المعالجة محليًا في متصفحك.</p></div><span className={styles.secureLabel}><Check size={13}/> تحكّم في ملفاتك</span></div>
           <textarea className={styles.lessonInput} value={lesson} onChange={e => {setLesson(e.target.value); setResult(null);}} placeholder={'الصق نص الدرس هنا...\n\nمثال: يُعرَّف التمثيل الضوئي بأنه العملية التي تستخدم فيها النباتات ضوء الشمس لتحويل الماء وثاني أكسيد الكربون إلى سكريات وأكسجين.'} maxLength={50000} aria-label="نص الدرس"/>
           <div className={styles.inputFooter}><div className={styles.fileActions}><button className={styles.uploadBtn} onClick={() => fileInput.current?.click()}><Upload size={16}/> رفع ملف PDF أو نص</button><input ref={fileInput} type="file" accept=".pdf,.txt,.md,.csv,text/plain,application/pdf" hidden onChange={e => onFileChange(e.target.files?.[0])}/>{fileName && <span className={styles.fileName}><FileText size={13}/>{fileName}<button aria-label="إزالة الملف" onClick={() => {setFileName('');setLesson('');if(fileInput.current)fileInput.current.value='';}}><X size={13}/></button></span>}</div><span className={styles.charCount}>{lesson.length.toLocaleString('ar')} / ٥٠٬٠٠٠</span></div>
-          <div className={styles.actionDivider}/><div className={styles.actionHead}><span>ماذا تريد أن تفعل بالدرس؟</span><label className={styles.languageSelect}>لغة النتيجة <select value={language} onChange={e => setLanguage(e.target.value)}><option>العربية</option><option>الفرنسية</option><option>الإنجليزية</option></select></label></div>
+          <div className={styles.actionDivider}/><div className={styles.actionHead}><span>ماذا تريد أن تفعل بالدرس؟</span><span className={styles.languageSelect}>لغة النتيجة: العربية · معالجة محلية</span></div>
           <div className={styles.taskGrid}>
             <button className={`${styles.taskCard} ${activeTask === 'summary' ? styles.taskSelected : ''}`} onClick={() => runTask('summary')} disabled={busy}><span className={`${styles.taskIcon} ${styles.purple}`}><FileText size={20}/></span><span><b>لخّص الدرس</b><small>أهم الأفكار في نقاط</small></span><ChevronLeft size={17} className={styles.taskArrow}/></button>
             <button className={`${styles.taskCard} ${activeTask === 'quiz' ? styles.taskSelected : ''}`} onClick={() => runTask('quiz')} disabled={busy}><span className={`${styles.taskIcon} ${styles.orange}`}><CircleHelp size={20}/></span><span><b>اختبر نفسك</b><small>أسئلة مع تصحيح وشرح</small></span><ChevronLeft size={17} className={styles.taskArrow}/></button>

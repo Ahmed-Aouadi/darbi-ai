@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BookOpen, BrainCircuit, CalendarDays, Check, ChevronLeft, CircleHelp, Clock3, FileText, GraduationCap, Layers3, Lightbulb, LoaderCircle, Menu, MessageCircle, Sparkles, Target, Upload, X } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -31,6 +31,28 @@ export default function Home() {
   const [flashFlipped, setFlashFlipped] = useState(false);
   const [knownCards, setKnownCards] = useState<number[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('darbi-lesson-v1');
+      if (saved) setLesson(saved);
+    } catch { /* Storage can be disabled by the browser. */ }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (lesson.trim()) window.localStorage.setItem('darbi-lesson-v1', lesson);
+      else window.localStorage.removeItem('darbi-lesson-v1');
+    } catch { /* Keep the editor usable when storage is unavailable. */ }
+  }, [lesson]);
+
+  const sampleLesson = 'التمثيل الضوئي عملية حيوية تقوم بها النباتات الخضراء لصنع غذائها باستخدام ضوء الشمس.\n\nتمتص الجذور الماء والأملاح المعدنية من التربة، بينما تمتص الأوراق ثاني أكسيد الكربون من الهواء. ويساعد اليخضور الموجود في الأوراق على التقاط الطاقة الضوئية.\n\nتنتج هذه العملية سكريات تستعملها النبتة للحصول على الطاقة والنمو، وينطلق الأكسجين إلى الهواء. لذلك يُعد التمثيل الضوئي مهمًا لاستمرار الحياة على الأرض.';
+
+  function loadSampleLesson() {
+    setLesson(sampleLesson);
+    setFileName('درس تجريبي: التمثيل الضوئي');
+    setResult(null); setError(''); setActiveTask('summary');
+  }
 
   async function extractPdf(file: File) {
     const buffer = await file.arrayBuffer();
@@ -107,6 +129,28 @@ export default function Home() {
   }
 
   function splitLesson(source: string): string[] {
+    return source
+      .replace(/\r/g, '\n')
+      .split(/(?<=[.!؟?؛])\s+|\n+/)
+      .map((part) => part.trim())
+      .filter((part) => part.length > 25);
+  }
+
+  function buildQuiz(source: string): QuizQuestion[] {
+    const chunks = splitLesson(source);
+    if (chunks.length < 2) return [];
+    const stop = new Set(['التي','الذي','الذين','على','إلى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن','الذي','التي','هذا','هذه']);
+    const terms = [...new Set((source.match(/[\p{L}\p{N}]{4,}/gu) || []).map((word) => word.toLowerCase()).filter((word) => !stop.has(word)))];
+    const questions: QuizQuestion[] = [];
+    for (const [index, sentence] of chunks.entries()) {
+      const term = terms.find((word) => sentence.toLowerCase().includes(word));
+      if (!term) continue;
+      const distractors = terms.filter((word) => word !== term && !sentence.toLowerCase().includes(word)).slice(index % 3, (index % 3) + 3);
+      if (distractors.length < 2) continue;
+      const options = [term, ...distractors].slice(0, 4);
+      const answer = (index * 3 + 1) % options.length;
+      [options[0], options[answer]] = [options[answer], options[0]];
+      const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\  function splitLesson(source: string): string[] {
     return source.split(/(?<=[.!؟?])\\s+|\\n+/).map((part) => part.trim()).filter((part) => part.length > 25);
   }
 
@@ -134,6 +178,33 @@ export default function Home() {
   function buildFlashcards(source: string): Flashcard[] {
     const chunks = splitLesson(source);
     const words = source.match(/[\\p{L}\\p{N}]{4,}/gu) || [];
+    const frequency = new Map<string, number>();
+    const stop = new Set(['التي','الذي','الذين','على','إلى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن']);
+    words.forEach((word) => { const key = word.toLowerCase(); if (!stop.has(key)) frequency.set(key, (frequency.get(key) || 0) + 1); });
+    const keywords = [...frequency.entries()].sort((a,b) => b[1]-a[1]).map(([word]) => word);
+    return (chunks.length ? chunks : [source.trim()]).slice(0, 12).map((sentence, index) => {
+      const term = keywords.find((word) => sentence.toLowerCase().includes(word.toLowerCase()));
+      return {
+        question: term ? `ما المعلومة الأساسية المتعلقة بـ «${term}»؟` : `ما الفكرة الأساسية في الجزء ${index + 1}؟`,
+        answer: sentence
+      };
+    });
+  }');
+      const blanked = sentence.replace(new RegExp(escapedTerm, 'i'), 'ــــــــــــ');
+      questions.push({
+        question: `أكمل العبارة من الدرس: «${blanked}»`,
+        options,
+        answer,
+        explanation: sentence
+      });
+      if (questions.length >= 8) break;
+    }
+    return questions;
+  }
+
+  function buildFlashcards(source: string): Flashcard[] {
+    const chunks = splitLesson(source);
+    const words = source.match(/[\p{L}\p{N}]{4,}/gu) || [];
     const frequency = new Map<string, number>();
     const stop = new Set(['التي','الذي','الذين','على','إلى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن']);
     words.forEach((word) => { const key = word.toLowerCase(); if (!stop.has(key)) frequency.set(key, (frequency.get(key) || 0) + 1); });
@@ -193,7 +264,7 @@ export default function Home() {
         <section className={styles.workspace} id="workspace">
           <div className={styles.inputHead}><div className={styles.inputTitleIcon}><FileText size={20}/></div><div><h3>ما الدرس الذي تراجعه اليوم؟</h3><p>الصق نص الدرس أو ارفع ملفًا. تتم المعالجة محليًا في متصفحك.</p></div><span className={styles.secureLabel}><Check size={13}/> تحكّم في ملفاتك</span></div>
           <textarea className={styles.lessonInput} value={lesson} onChange={e => {setLesson(e.target.value); setResult(null);}} placeholder={'الصق نص الدرس هنا...\n\nمثال: يُعرَّف التمثيل الضوئي بأنه العملية التي تستخدم فيها النباتات ضوء الشمس لتحويل الماء وثاني أكسيد الكربون إلى سكريات وأكسجين.'} maxLength={50000} aria-label="نص الدرس"/>
-          <div className={styles.inputFooter}><div className={styles.fileActions}><button className={styles.uploadBtn} onClick={() => fileInput.current?.click()}><Upload size={16}/> رفع ملف PDF أو نص</button><input ref={fileInput} type="file" accept=".pdf,.txt,.md,.csv,text/plain,application/pdf" hidden onChange={e => onFileChange(e.target.files?.[0])}/>{fileName && <span className={styles.fileName}><FileText size={13}/>{fileName}<button aria-label="إزالة الملف" onClick={() => {setFileName('');setLesson('');if(fileInput.current)fileInput.current.value='';}}><X size={13}/></button></span>}</div><span className={styles.charCount}>{lesson.length.toLocaleString('ar')} / ٥٠٬٠٠٠</span></div>
+          <div className={styles.inputFooter}><div className={styles.fileActions}><button className={styles.uploadBtn} onClick={() => fileInput.current?.click()}><Upload size={16}/> رفع ملف PDF أو نص</button><button className={styles.uploadBtn} onClick={loadSampleLesson}>جرّب درسًا نموذجيًا</button><button className={styles.uploadBtn} onClick={() => {setLesson('');setFileName('');setResult(null);setError('');if(fileInput.current)fileInput.current.value='';}}>مسح</button><input ref={fileInput} type="file" accept=".pdf,.txt,.md,.csv,text/plain,application/pdf" hidden onChange={e => onFileChange(e.target.files?.[0])}/>{fileName && <span className={styles.fileName}><FileText size={13}/>{fileName}</span>}</div><span className={styles.charCount}>{lesson.length.toLocaleString('ar')} / ٥٠٬٠٠٠</span></div>
           <div className={styles.actionDivider}/><div className={styles.actionHead}><span>ماذا تريد أن تفعل بالدرس؟</span><span className={styles.languageSelect}>لغة النتيجة: العربية · معالجة محلية</span></div>
           <div className={styles.taskGrid}>
             <button className={`${styles.taskCard} ${activeTask === 'summary' ? styles.taskSelected : ''}`} onClick={() => runTask('summary')} disabled={busy}><span className={`${styles.taskIcon} ${styles.purple}`}><FileText size={20}/></span><span><b>لخّص الدرس</b><small>أهم الأفكار في نقاط</small></span><ChevronLeft size={17} className={styles.taskArrow}/></button>

@@ -85,3 +85,8 @@
 .taskCard:active,.uploadBtn:active,.primaryAction:active{transform:translateY(1px)}
 .quizOption{overflow-wrap:anywhere}
 .flashMain{white-space:pre-wrap}
+
+.resultActions{margin-right:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.resultActions .copyButton{display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer;transition:background .18s,border-color .18s}
+.resultActions .copyButton:hover{background:#f6f5ff;border-color:#c9c5fa}
+@media(max-width:600px){.resultHeader{align-items:flex-start;flex-wrap:wrap}.resultActions{width:100%;margin-right:47px}.resultActions .copyButton{flex:1;justify-content:center}}

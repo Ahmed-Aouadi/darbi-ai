@@ -1,262 +1,168 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-  ArrowDownLeft, ArrowUpLeft, BadgePercent, Box, Check, ChevronDown, CirclePlus,
-  Eye, LayoutGrid, MessageCircle, Package,
-  Plus, Search, Settings2, Share2, ShoppingBag, SlidersHorizontal, Sparkles,
-  Store, Trash2, TrendingUp, X
-} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ArrowLeft, ArrowRight, BadgeCheck, BookOpen, Check, ChevronLeft, CircleHelp, Clock3, Eye, FileText, Fingerprint, LockKeyhole, MessageSquareText, Search, ShieldAlert, Sparkles, Target, X } from 'lucide-react';
 import styles from './page.module.css';
 
-type Product = {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  stock: number;
-  emoji: string;
-  tone: string;
-  description: string;
-};
+type Clue = { id: string; title: string; kind: string; text: string; icon: string };
+type Suspect = { id: string; name: string; role: string; statement: string; secret: string };
 
-const starterProducts: Product[] = [
-  { id: 'p1', name: 'كوب سيراميك أنيق', category: 'هدايا', price: 850, stock: 12, emoji: '☕', tone: 'cream', description: 'كوب أنيق مناسب للاستخدام اليومي والهدايا.' },
-  { id: 'p2', name: 'حقيبة يومية', category: 'إكسسوارات', price: 2400, stock: 7, emoji: '👜', tone: 'pink', description: 'حقيبة عملية بتصميم بسيط يناسب كل يوم.' },
-  { id: 'p3', name: 'علبة هدايا مميزة', category: 'هدايا', price: 1600, stock: 4, emoji: '🎁', tone: 'lilac', description: 'علبة هدايا بتنسيق جميل للمناسبات الخاصة.' },
-  { id: 'p4', name: 'دفتر بتصميم عصري', category: 'قرطاسية', price: 650, stock: 18, emoji: '📒', tone: 'mint', description: 'دفتر أنيق لتدوين الأفكار والملاحظات.' },
-  { id: 'p5', name: 'سوار بسيط', category: 'إكسسوارات', price: 500, stock: 2, emoji: '📿', tone: 'peach', description: 'قطعة خفيفة تضيف لمسة لطيفة إلى إطلالتك.' },
-  { id: 'p6', name: 'باقة ورد صناعي', category: 'ديكور', price: 1900, stock: 0, emoji: '💐', tone: 'blue', description: 'باقة ديكور جميلة لتزيين المنزل أو المكتب.' },
+const cases = [
+  {
+    id: 'museum', level: 'متوسط', duration: '10–15 دقيقة', category: 'سرقة غامضة',
+    title: 'سرقة الجوهرة الزرقاء', location: 'متحف المدينة — قاعة المقتنيات', time: '21:40',
+    intro: 'اختفت جوهرة نادرة من صندوق زجاجي مغلق أثناء انقطاع الكهرباء لمدة 90 ثانية. لم يُكسر الزجاج، ولم يغادر أي شخص المبنى.',
+    report: 'عُثر على الصندوق مفتوحًا عند عودة الإضاءة. سجلّ الباب لم يُظهر أي دخول أو خروج خلال فترة الانقطاع.',
+    clues: [
+      { id: 'c1', title: 'تقرير الكهرباء', kind: 'دليل تقني', text: 'انقطع التيار عن القاعة لمدة 90 ثانية. لكن كاميرا الممر استمرت في التسجيل بفضل بطاريتها الاحتياطية.', icon: '⚡' },
+      { id: 'c2', title: 'بطاقة الدخول', kind: 'سجلّ أمني', text: 'استُخدمت بطاقة أمين المعرض قبل الانقطاع بدقيقتين، ولم تُسجّل أي بطاقة أخرى بعدها.', icon: '🪪' },
+      { id: 'c3', title: 'أثر أزرق', kind: 'أثر مادي', text: 'وُجد مسحوق أزرق دقيق على طرف قفاز قرب الصندوق. الجوهرة نفسها لا تترك مسحوقًا.', icon: '🧤' },
+      { id: 'c4', title: 'توقيت الكاميرا', kind: 'تسجيل مصوّر', text: 'أظهرت الكاميرا شخصًا يحمل مظلة طويلة قبل انقطاع الكهرباء، رغم أن الطقس كان جافًا.', icon: '📹' },
+      { id: 'c5', title: 'فاتورة الترميم', kind: 'وثيقة', text: 'اشترى فنيّ الترميم مسحوقًا أزرق يُستخدم في تلوين النسخ الجبسية قبل يومين.', icon: '🧾' },
+    ],
+    suspects: [
+      { id: 's1', name: 'آدم مراد', role: 'أمين المعرض', statement: 'كنت في مكتب الأرشيف أراجع السجلات. بطاقتي غالبًا بقيت في الدرج.', secret: 'أخفى أنه أعطى بطاقته الاحتياطية لشخص آخر صباحًا.' },
+      { id: 's2', name: 'ليلى بن سالم', role: 'مرمّمة القطع', statement: 'كنت في غرفة الترميم أجهّز نسخة تدريبية. لم أقترب من القاعة.', secret: 'استخدمت مسحوقًا أزرق لصنع نسخة تدريبية من الجوهرة.' },
+      { id: 's3', name: 'سامي قادري', role: 'حارس الأمن', statement: 'تابعت المدخل الرئيسي طوال الليل. لم يدخل أو يخرج أحد.', secret: 'كان يعلم أن كاميرا الممر تعمل ببطارية احتياطية.' },
+      { id: 's4', name: 'نور شريف', role: 'مرشدة المتحف', statement: 'غادرت القاعة قبل الإغلاق، ولم أعد إليها.', secret: 'رأت مظلة طويلة في غرفة الموظفين لكنها لم تذكر ذلك.' },
+    ],
+    solution: 's2',
+    explanation: 'ليلى هي الأقرب إلى الأدلة: مسحوق الترميم الأزرق، والنسخة التدريبية، وتوقيت الانقطاع الذي استُغلّ لاستبدال الجوهرة. المظلة الطويلة كانت تمويهًا لإخفاء الأداة المستخدمة في فتح الصندوق.',
+  },
+  {
+    id: 'studio', level: 'سهل', duration: '8–12 دقيقة', category: 'اختفاء غريب',
+    title: 'الرسالة التي اختفت', location: 'استوديو البث — الطابق الثالث', time: '18:15',
+    intro: 'اختفت رسالة ورقية مهمة من غرفة مغلقة قبل بث مباشر بدقائق. ثلاثة أشخاص دخلوا الاستوديو، وكل واحد يقول إنه لم يرَ الرسالة.',
+    report: 'لم تُفتح النوافذ، والباب لا يعمل إلا ببطاقة. على المكتب كوب ماء بارد وورقة ممزقة من دفتر الملاحظات.',
+    clues: [
+      { id: 'd1', title: 'كوب الماء', kind: 'أثر مادي', text: 'الكوب بارد جدًا، لكن حلقة الماء حوله جافة تقريبًا. يبدو أنه وُضع على المكتب قبل وقت طويل.', icon: '🥛' },
+      { id: 'd2', title: 'سجلّ الباب', kind: 'سجلّ أمني', text: 'دخلت مريم عند 18:02، ثم يوسف عند 18:08، ثم رامي عند 18:12. لم يسجل الباب أي خروج حتى 18:20.', icon: '🚪' },
+      { id: 'd3', title: 'الورقة الممزقة', kind: 'وثيقة', text: 'تحتوي الورقة على نصف جملة: «...النسخة الأصلية في درج الصوت».', icon: '📄' },
+      { id: 'd4', title: 'صندوق الصوت', kind: 'دليل تقني', text: 'درج جهاز الصوت يحتوي على مساحة فارغة بحجم ظرف الرسالة، وبقايا شريط لاصق جديد.', icon: '🎙️' },
+      { id: 'd5', title: 'ملاحظة المخرج', kind: 'شهادة', text: 'قال المخرج إن رامي طلب قبل البث بدقائق أن يختبر جهاز الصوت وحده.', icon: '🗒️' },
+    ],
+    suspects: [
+      { id: 's1', name: 'مريم عادل', role: 'معدة البرنامج', statement: 'وضعت أوراقي على الطاولة ثم خرجت لجلب القهوة.', secret: 'نسيت دفترها مفتوحًا قرب الرسالة.' },
+      { id: 's2', name: 'يوسف ناصر', role: 'المذيع', statement: 'كنت أراجع النص أمام المرآة ولم ألمس المكتب.', secret: 'كان يعرف أن الرسالة تحتوي على معلومة قد تغيّر موضوع الحلقة.' },
+      { id: 's3', name: 'رامي فوزي', role: 'مهندس الصوت', statement: 'اختبرت الميكروفون فقط، ولم أفتح أي درج.', secret: 'طلب وقتًا منفردًا مع جهاز الصوت قبل البث.' },
+    ],
+    solution: 's3',
+    explanation: 'رامي طلب الانفراد بجهاز الصوت، وتطابق حجم الدرج مع الظرف، ووجود الشريط اللاصق يدعم إخفاء الرسالة داخله. الورقة الممزقة كانت تلميحًا إلى مكانها.',
+  },
+  {
+    id: 'lighthouse', level: 'صعب', duration: '15–20 دقيقة', category: 'لغز مغلق',
+    title: 'سرّ المنارة الصامتة', location: 'منارة رأس الضباب', time: '00:07',
+    intro: 'توقفت المنارة عن إرسال إشارتها في ليلة عاصفة، واختفى دفتر الملاحة. لا توجد آثار أقدام في الخارج، والباب كان موصدًا من الداخل.',
+    report: 'وجد فريق الإنقاذ مصباحًا زيتيًا مشتعلًا، وساعة متوقفة، وثلاث قطرات ماء على الأرض رغم أن النوافذ محكمة الإغلاق.',
+    clues: [
+      { id: 'e1', title: 'الساعة المتوقفة', kind: 'دليل زمني', text: 'توقفت الساعة عند 23:47، لكن سجلّ المولد يثبت أن الكهرباء انقطعت عند 00:07 بالضبط.', icon: '🕰️' },
+      { id: 'e2', title: 'قطرات الماء', kind: 'أثر مادي', text: 'قطرات الماء مالحة، وتوجد على الأرض أسفل فتحة تهوية ضيقة تؤدي إلى مخزن الحبال.', icon: '💧' },
+      { id: 'e3', title: 'دفتر الصيانة', kind: 'وثيقة', text: 'سُجّلت صيانة فتحة التهوية قبل يوم واحد، وكتب الفني: «يمكن فتحها من جهة المخزن».', icon: '📘' },
+      { id: 'e4', title: 'المصباح الزيتي', kind: 'أثر مادي', text: 'المصباح حديث الاشتعال، لكن الفتيل قصير جدًا؛ استُخدم على الأرجح لوقت قصير لا طوال الليل.', icon: '🪔' },
+      { id: 'e5', title: 'رسالة لاسلكية', kind: 'تسجيل', text: 'وصلت رسالة مقتضبة قبل الانقطاع: «الطريق آمن، أطفئوا الإشارة». لم يحدد المرسل اسمه.', icon: '📻' },
+    ],
+    suspects: [
+      { id: 's1', name: 'جلال منصور', role: 'حارس المنارة', statement: 'لم أغادر غرفة المراقبة طوال الليل.', secret: 'يعرف أن فتحة التهوية تصل إلى مخزن الحبال.' },
+      { id: 's2', name: 'هدى كمال', role: 'فنية الصيانة', statement: 'أنهيت الصيانة نهارًا، ولم أعد بعد ذلك.', secret: 'هي من كتبت ملاحظة فتحة التهوية في دفتر الصيانة.' },
+      { id: 's3', name: 'بشير طاهر', role: 'صياد محلي', statement: 'كنت في البحر ولم أقترب من المنارة.', secret: 'يستخدم عادةً رسالة لاسلكية قصيرة مع الحارس.' },
+    ],
+    solution: 's1',
+    explanation: 'جلال يعرف فتحة التهوية التي تفسّر قطرات الماء المالحة وطريقة الدخول والخروج دون فتح الباب. الساعة المتوقفة كانت تضليلًا، بينما انقطاع المولد يحدد وقت تعطيل الإشارة.',
+  },
 ];
 
-const categories = ['الكل', 'هدايا', 'إكسسوارات', 'قرطاسية', 'ديكور'];
-const money = (amount: number) => new Intl.NumberFormat('ar-DZ').format(amount) + ' دج';
-
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>(starterProducts);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('الكل');
-  const [showForm, setShowForm] = useState(false);
+  const [caseIndex, setCaseIndex] = useState(0);
+  const [screen, setScreen] = useState<'home' | 'case' | 'result'>('home');
+  const [tab, setTab] = useState<'evidence' | 'suspects' | 'notes'>('evidence');
+  const [found, setFound] = useState<string[]>([]);
+  const [questioned, setQuestioned] = useState<string[]>([]);
+  const [selectedSuspect, setSelectedSuspect] = useState('');
+  const [notes, setNotes] = useState('');
+  const [showReport, setShowReport] = useState(false);
   const [toast, setToast] = useState('');
-  const [shopName, setShopName] = useState('متجري الصغير');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: '', category: 'هدايا', price: '', stock: '', emoji: '🎁', description: '' });
+  const current = cases[caseIndex];
+  const progress = Math.round(((found.length + questioned.length) / (current.clues.length + current.suspects.length)) * 100);
+  const currentSuspect = useMemo(() => current.suspects.find((s) => s.id === selectedSuspect), [current, selectedSuspect]);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('souqi-products');
-      const savedName = localStorage.getItem('souqi-shop-name');
-      const savedWhatsapp = localStorage.getItem('souqi-whatsapp');
-      if (saved) setProducts(JSON.parse(saved));
-      if (savedName) setShopName(savedName);
-      if (savedWhatsapp) setWhatsapp(savedWhatsapp);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try { localStorage.setItem('souqi-products', JSON.stringify(products)); } catch {}
-  }, [products]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('souqi-shop-name', shopName);
-      localStorage.setItem('souqi-whatsapp', whatsapp);
-    } catch {}
-  }, [shopName, whatsapp]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const id = window.setTimeout(() => setToast(''), 2800);
-    return () => window.clearTimeout(id);
-  }, [toast]);
-
-  const visibleProducts = useMemo(() => products.filter((p) => {
-    const matchesSearch = (p.name + ' ' + p.category).toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && (category === 'الكل' || p.category === category);
-  }), [products, search, category]);
-
-  const totalValue = products.reduce((sum, p) => sum + p.price * p.stock, 0);
-  const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 3).length;
-  const inStock = products.filter((p) => p.stock > 0).length;
-
-  const addProduct = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!newProduct.name.trim() || !newProduct.price || Number(newProduct.price) < 0) {
-      setToast('أدخل اسم المنتج وسعرًا صحيحًا أولًا');
-      return;
-    }
-    const product: Product = {
-      id: Date.now().toString(),
-      name: newProduct.name.trim(),
-      category: newProduct.category,
-      price: Number(newProduct.price),
-      stock: Math.max(0, Number(newProduct.stock) || 0),
-      emoji: newProduct.emoji || '📦',
-      tone: ['cream', 'pink', 'lilac', 'mint', 'peach', 'blue'][products.length % 6],
-      description: newProduct.description.trim() || 'منتج جديد من متجرنا.',
-    };
-    setProducts((current) => [product, ...current]);
-    setNewProduct({ name: '', category: 'هدايا', price: '', stock: '', emoji: '🎁', description: '' });
-    setShowForm(false);
-    setToast('تمت إضافة المنتج إلى كتالوجك');
+  const startCase = (index: number) => {
+    setCaseIndex(index); setFound([]); setQuestioned([]); setSelectedSuspect(''); setNotes(''); setTab('evidence'); setShowReport(false); setScreen('case');
   };
-
-  const orderProduct = (product: Product) => {
-    if (!whatsapp.trim()) {
-      setShowSettings(true);
-      setToast('أضف رقم واتساب المتجر لاستقبال الطلبات');
-      return;
-    }
-    const number = whatsapp.replace(/[^0-9]/g, '');
-    const message = encodeURIComponent('السلام عليكم، أريد طلب: ' + product.name + ' — السعر ' + money(product.price));
-    window.open('https://wa.me/' + number + '?text=' + message, '_blank', 'noopener,noreferrer');
-  };
-
-  const shareShop = async () => {
-    const url = window.location.href;
-    try {
-      await navigator.clipboard.writeText(url);
-      setToast('تم نسخ رابط الصفحة الحالية');
-    } catch {
-      setToast('انسخ رابط الموقع من شريط المتصفح لمشاركته');
-    }
+  const finishCase = () => setScreen('result');
+  const clueFound = (id: string) => {
+    if (found.includes(id)) return;
+    setFound((items) => [...items, id]);
+    setToast('تمت إضافة الدليل إلى ملف القضية');
   };
 
   return (
-    <main className={styles.app}>
-      <aside className={styles.sidebar}>
-        <div className={styles.brand}>
-          <div className={styles.brandIcon}><Store size={23} /></div>
-          <div><strong>سوقي</strong><span>متجرك، بطريقتك</span></div>
-        </div>
-        <div className={styles.sideLabel}>مساحة العمل</div>
-        <button className={styles.navActive}><LayoutGrid size={18} /> نظرة عامة</button>
-        <button className={styles.navItem} onClick={() => document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' })}><Package size={18} /> المنتجات <span className={styles.navCount}>{products.length}</span></button>
-        <button className={styles.navItem} onClick={() => setShowSettings(true)}><Settings2 size={18} /> إعدادات المتجر</button>
-        <div className={styles.sideSpacer} />
-        <div className={styles.helpCard}>
-          <div className={styles.helpIcon}><Sparkles size={18} /></div>
-          <strong>متجرك يبدأ بخطوة</strong>
-          <p>أضف منتجاتك وشاركها مع زبائنك بسهولة.</p>
-          <button onClick={() => setShowForm(true)}>أضف أول منتج <ArrowUpLeft size={15} /></button>
-        </div>
-        <div className={styles.sidebarFoot}><span className={styles.onlineDot} /> بياناتك محفوظة على هذا الجهاز</div>
-      </aside>
+    <main className={styles.app} dir="rtl">
+      <header className={styles.topbar}>
+        <button className={styles.brand} onClick={() => setScreen('home')} aria-label="العودة للرئيسية"><span className={styles.brandMark}><Fingerprint size={24} /></span><span><strong>ملف 404</strong><small>غرفة التحقيق</small></span></button>
+        <div className={styles.topCenter}><span className={styles.statusDot} /> أرشيف القضايا <span className={styles.topDivider}>/</span> <span>القسم الجنائي</span></div>
+        <button className={styles.topButton} onClick={() => setShowReport(true)}><CircleHelp size={16} /> كيف ألعب؟</button>
+      </header>
 
-      <section className={styles.main}>
-        <header className={styles.topbar}>
-          <div className={styles.breadcrumb}><span>مساحة العمل</span><span className={styles.crumbSlash}>/</span><strong>نظرة عامة</strong></div>
-          <div className={styles.topActions}>
-            <button className={styles.outlineButton} onClick={() => setShowSettings(true)}><Settings2 size={16} /> إعدادات المتجر</button>
-            <button className={styles.primaryButton} onClick={() => setShowForm(true)}><Plus size={17} /> إضافة منتج</button>
+      {screen === 'home' && <section className={styles.home}>
+        <div className={styles.hero}>
+          <div className={styles.heroGrid} />
+          <div className={styles.heroCopy}>
+            <div className={styles.eyebrow}><span /> ملفات سرية — مصنّف 404</div>
+            <h1>كل دليل يحكي قصة.<br /><em>هل ستكتشف الحقيقة؟</em></h1>
+            <p>ادخل غرفة التحقيق، افحص الأدلة، استجوب المشتبه بهم، واكشف ما حدث فعلًا. كل قضية تنتظر عينًا لا يفوتها شيء.</p>
+            <button className={styles.primaryCta} onClick={() => startCase(0)}>ابدأ أول تحقيق <ArrowLeft size={18} /></button>
+            <div className={styles.heroMeta}><span><LockKeyhole size={14} /> قضايا خيالية</span><span><Clock3 size={14} /> 8–20 دقيقة</span><span><Target size={14} /> اختبر ملاحظتك</span></div>
           </div>
-        </header>
-
-        <div className={styles.content}>
-          <section className={styles.welcome}>
-            <div className={styles.welcomeCopy}>
-              <div className={styles.eyebrow}><Sparkles size={14} /> مساحة تجارتك الصغيرة</div>
-              <h1>أهلًا بك في <span>{shopName || 'متجري الصغير'}</span> 👋</h1>
-              <p>رتّب منتجاتك، تابع مخزونك، واجعل طلبات زبائنك أقرب إليك.</p>
-              <div className={styles.welcomeButtons}>
-                <button className={styles.lightButton} onClick={() => setShowForm(true)}><CirclePlus size={17} /> أضف منتجًا جديدًا</button>
-                <button className={styles.textButton} onClick={shareShop}><Share2 size={16} /> مشاركة الصفحة</button>
-              </div>
-            </div>
-            <div className={styles.heroArt}>
-              <div className={styles.heroCircle}><ShoppingBag size={55} strokeWidth={1.4} /></div>
-              <span className={styles.floatTag}><Check size={14} /> متجرك جاهز</span>
-              <span className={styles.floatSpark}>✦</span>
-              <span className={styles.floatDot} />
-            </div>
-          </section>
-
-          <section className={styles.stats}>
-            <article className={styles.statCard}>
-              <div className={styles.statTop}><span>إجمالي المنتجات</span><div className={styles.statIcon + ' ' + styles.purple}><Package size={19} /></div></div>
-              <div className={styles.statValue}>{products.length}<small>منتج</small></div>
-              <div className={styles.statFoot}><span className={styles.statPositive}><TrendingUp size={13} /> كتالوجك</span><span>عدد المنتجات المضافة</span></div>
-            </article>
-            <article className={styles.statCard}>
-              <div className={styles.statTop}><span>منتجات متوفرة</span><div className={styles.statIcon + ' ' + styles.green}><Box size={19} /></div></div>
-              <div className={styles.statValue}>{inStock}<small>منتج</small></div>
-              <div className={styles.statFoot}><span className={styles.greenText}>متاح للبيع</span><span>من أصل {products.length}</span></div>
-            </article>
-            <article className={styles.statCard}>
-              <div className={styles.statTop}><span>مخزون منخفض</span><div className={styles.statIcon + ' ' + styles.orange}><BadgePercent size={19} /></div></div>
-              <div className={styles.statValue}>{lowStock}<small>منتج</small></div>
-              <div className={styles.statFoot}><span className={lowStock ? styles.orangeText : styles.greenText}>{lowStock ? 'يحتاج إلى انتباه' : 'كل شيء جيد'}</span><span>3 قطع أو أقل</span></div>
-            </article>
-            <article className={styles.statCard}>
-              <div className={styles.statTop}><span>قيمة المخزون</span><div className={styles.statIcon + ' ' + styles.blue}><TrendingUp size={19} /></div></div>
-              <div className={styles.statValue + ' ' + styles.moneyValue}>{money(totalValue)}</div>
-              <div className={styles.statFoot}><span>تقدير تقريبي</span><span>السعر × الكمية</span></div>
-            </article>
-          </section>
-
-          <section className={styles.catalog} id="catalog">
-            <div className={styles.catalogHeader}>
-              <div><h2>منتجاتك</h2><p>إدارة بسيطة لكل ما تعرضه للبيع</p></div>
-              <button className={styles.primaryButton} onClick={() => setShowForm(true)}><Plus size={16} /> إضافة منتج</button>
-            </div>
-            <div className={styles.toolbar}>
-              <div className={styles.searchBox}><Search size={17} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث عن منتج أو تصنيف..." /><SlidersHorizontal size={16} /></div>
-              <div className={styles.categoryTabs}>
-                {categories.map((item) => <button key={item} className={category === item ? styles.categoryActive : ''} onClick={() => setCategory(item)}>{item}</button>)}
-              </div>
-            </div>
-
-            {visibleProducts.length ? <div className={styles.productGrid}>
-              {visibleProducts.map((product) => <article className={styles.productCard} key={product.id}>
-                <div className={styles.productVisual + ' ' + styles[product.tone]}>
-                  <span className={styles.productCategory}>{product.category}</span>
-                  <span className={styles.productEmoji} role="img" aria-label={product.name}>{product.emoji}</span>
-                  <button className={styles.favoriteButton} aria-label="إزالة المنتج" onClick={() => { setProducts((current) => current.filter((p) => p.id !== product.id)); setToast('تم حذف المنتج'); }}><Trash2 size={15} /></button>
-                  <span className={styles.visualSpark}>✦</span>
-                </div>
-                <div className={styles.productInfo}>
-                  <div className={styles.productNameRow}><h3>{product.name}</h3><span className={styles.stockBadge + ' ' + (product.stock === 0 ? styles.outStock : product.stock <= 3 ? styles.lowStock : styles.available)}>{product.stock === 0 ? 'نفد المخزون' : product.stock <= 3 ? 'كمية قليلة' : 'متوفر'}</span></div>
-                  <p>{product.description}</p>
-                  <div className={styles.productMeta}><strong>{money(product.price)}</strong><span>الكمية: {product.stock}</span></div>
-                  <button className={styles.orderButton} onClick={() => orderProduct(product)}><MessageCircle size={16} /> اطلب عبر واتساب <ArrowDownLeft size={15} /></button>
-                </div>
-              </article>)}
-            </div> : <div className={styles.emptyState}><div><Search size={25} /></div><strong>لم نعثر على منتجات</strong><p>جرّب تغيير كلمة البحث أو التصنيف.</p><button onClick={() => { setSearch(''); setCategory('الكل'); }}>عرض كل المنتجات</button></div>}
-            <div className={styles.catalogFoot}><span>عرض {visibleProducts.length} من {products.length} منتجات</span><span><Eye size={14} /> معاينة كتالوجك</span></div>
-          </section>
-          <footer className={styles.footer}>صُنع ببساطة لأصحاب المشاريع الصغيرة <span>✦</span> سوقي</footer>
+          <div className={styles.caseArt} aria-hidden="true">
+            <div className={styles.fileCard}><div className={styles.fileTop}><span>CASE FILE</span><span>404-{String(caseIndex + 21).padStart(3, '0')}</span></div><div className={styles.fingerprint}><Fingerprint size={94} strokeWidth={1.1} /></div><div className={styles.redStamp}>سري للغاية</div><div className={styles.fileLines}><i /><i /><i /></div><div className={styles.fileBottom}>ARCHIVE / EVIDENCE UNIT</div></div>
+            <span className={styles.artPin} /><span className={styles.artString} /><span className={styles.artLabel}>NO. 004 / ACTIVE</span>
+          </div>
         </div>
-      </section>
+        <div className={styles.sectionHead}><div><span className={styles.sectionKicker}>اختر ملفك</span><h2>قضايا تنتظر الحل</h2><p>كل قضية مستقلة، بأدلة وشخصيات ونهاية خاصة.</p></div><span className={styles.caseCount}>03 ملفات متاحة</span></div>
+        <div className={styles.caseGrid}>
+          {cases.map((item, index) => <article className={styles.caseCard} key={item.id}>
+            <div className={styles.caseThumb + ' ' + styles['thumb' + index]}><span className={styles.caseNumber}>CASE / 0{index + 1}</span><span className={styles.thumbIcon}>{index === 0 ? '◆' : index === 1 ? '◉' : '☼'}</span><span className={styles.caseLevel}>{item.level}</span></div>
+            <div className={styles.caseCardBody}><div className={styles.caseType}>{item.category}</div><h3>{item.title}</h3><p>{item.intro}</p><div className={styles.caseCardFoot}><span><Clock3 size={14} /> {item.duration}</span><button onClick={() => startCase(index)}>فتح الملف <ChevronLeft size={16} /></button></div></div>
+          </article>)}
+        </div>
+        <div className={styles.homeFoot}><ShieldAlert size={16} /><span>جميع القضايا والشخصيات خيالية، صُممت لاختبار المنطق والانتباه.</span><span className={styles.footCode}>404 / ARCHIVE</span></div>
+      </section>}
 
-      {showForm && <div className={styles.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
-        <form className={styles.modal} onSubmit={addProduct}>
-          <div className={styles.modalHeader}><div><span className={styles.modalIcon}><Package size={19} /></span><h2>إضافة منتج جديد</h2><p>أدخل تفاصيل المنتج لعرضه في كتالوجك.</p></div><button type="button" className={styles.closeButton} onClick={() => setShowForm(false)}><X size={19} /></button></div>
-          <label>اسم المنتج<input autoFocus required value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} placeholder="مثال: حقيبة يدوية" /></label>
-          <div className={styles.formRow}>
-            <label>السعر (دج)<input required type="number" min="0" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} placeholder="1500" /></label>
-            <label>الكمية المتوفرة<input type="number" min="0" value={newProduct.stock} onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} placeholder="10" /></label>
-          </div>
-          <div className={styles.formRow}>
-            <label>التصنيف<select value={newProduct.category} onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}>{categories.filter((c) => c !== 'الكل').map((c) => <option key={c}>{c}</option>)}</select><ChevronDown className={styles.selectChevron} size={14} /></label>
-            <label>رمز المنتج<select value={newProduct.emoji} onChange={(e) => setNewProduct({ ...newProduct, emoji: e.target.value })}>{['🎁','☕','👜','📒','📿','💐','🎧','👕','🕯️','🧸','🧴','📦'].map((e) => <option key={e} value={e}>{e}</option>)}</select></label>
-          </div>
-          <label>وصف قصير <span className={styles.optional}>(اختياري)</span><textarea value={newProduct.description} onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} placeholder="اكتب وصفًا يشجع الزبون على الشراء..." rows={3} /></label>
-          <div className={styles.modalActions}><button type="button" className={styles.cancelButton} onClick={() => setShowForm(false)}>إلغاء</button><button type="submit" className={styles.primaryButton}><Plus size={16} /> حفظ المنتج</button></div>
-        </form>
-      </div>}
+      {screen === 'case' && <section className={styles.workspace}>
+        <div className={styles.workspaceTop}><button className={styles.backButton} onClick={() => setScreen('home')}><ArrowRight size={17} /> كل القضايا</button><div className={styles.caseCrumb}>ملف <b>404-{String(caseIndex + 21).padStart(3, '0')}</b><span>/</span>{current.category}</div><div className={styles.caseTimer}><span className={styles.statusDot} /> التحقيق جارٍ</div></div>
+        <div className={styles.caseBanner}><div><span className={styles.sectionKicker}>ملف القضية / {current.location}</span><h1>{current.title}</h1><p>{current.intro}</p></div><div className={styles.bannerSeal}><Fingerprint size={36} /><span>قيد التحقيق</span></div></div>
+        <div className={styles.progressRow}><div><span>تقدم التحقيق</span><b>{progress}%</b></div><div className={styles.progressTrack}><span style={{ width: progress + '%' }} /></div><span>{found.length + questioned.length} / {current.clues.length + current.suspects.length} عناصر مفحوصة</span></div>
+        <div className={styles.workGrid}>
+          <section className={styles.panel}>
+            <div className={styles.panelTabs}>
+              <button className={tab === 'evidence' ? styles.activeTab : ''} onClick={() => setTab('evidence')}><Search size={16} /> الأدلة <span>{found.length}/{current.clues.length}</span></button>
+              <button className={tab === 'suspects' ? styles.activeTab : ''} onClick={() => setTab('suspects')}><Eye size={16} /> المشتبه بهم <span>{questioned.length}/{current.suspects.length}</span></button>
+              <button className={tab === 'notes' ? styles.activeTab : ''} onClick={() => setTab('notes')}><FileText size={16} /> ملاحظاتي</button>
+            </div>
+            {tab === 'evidence' && <div className={styles.evidenceList}>{current.clues.map((clue) => <article key={clue.id} className={styles.evidenceCard}><div className={styles.evidenceIcon}>{clue.icon}</div><div className={styles.evidenceBody}><div className={styles.evidenceMeta}><span>{clue.kind}</span>{found.includes(clue.id) && <span className={styles.examined}><Check size={12} /> تمت المعاينة</span>}</div><h3>{clue.title}</h3><p>{found.includes(clue.id) ? clue.text : 'افتح هذا الدليل لفحص التفاصيل واكتشاف ما قد يخفيه.'}</p>{!found.includes(clue.id) && <button className={styles.inspectButton} onClick={() => clueFound(clue.id)}>فحص الدليل <ArrowLeft size={14} /></button>}</div></article>)}</div>}
+            {tab === 'suspects' && <div className={styles.suspectList}>{current.suspects.map((suspect) => <article className={styles.suspectCard} key={suspect.id}><div className={styles.suspectAvatar}>{suspect.name.slice(0, 1)}</div><div className={styles.suspectBody}><div className={styles.evidenceMeta}><span>{suspect.role}</span>{questioned.includes(suspect.id) && <span className={styles.examined}><Check size={12} /> تم الاستجواب</span>}</div><h3>{suspect.name}</h3><p>{questioned.includes(suspect.id) ? suspect.statement : 'ملف الشهادة مغلق. ابدأ الاستجواب لتسجيل أقواله.'}</p>{questioned.includes(suspect.id) ? <div className={styles.statement}><MessageSquareText size={14} /> معلومة متضاربة: {suspect.secret}</div> : <button className={styles.inspectButton} onClick={() => setQuestioned((items) => [...items, suspect.id])}>استجواب المشتبه به <ArrowLeft size={14} /></button>}</div></article>)}</div>}
+            {tab === 'notes' && <div className={styles.notesPane}><div className={styles.notesTitle}><FileText size={18} /><div><strong>دفتر المحقق</strong><span>ملاحظاتك خاصة بهذه الجلسة</span></div></div><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="دوّن التناقضات، اربط الأدلة ببعضها، واكتب فرضيتك هنا..." /><div className={styles.notesHint}>تلميح: قارن التوقيت مع الأدلة المادية قبل توجيه الاتهام.</div></div>}
+          </section>
+          <aside className={styles.sidePanel}>
+            <div className={styles.sidePanelHead}><span className={styles.miniIcon}><BookOpen size={17} /></span><div><h3>ملخص القضية</h3><p>المعلومات الأولية</p></div></div>
+            <div className={styles.briefRow}><span>الموقع</span><strong>{current.location}</strong></div><div className={styles.briefRow}><span>وقت الحادث</span><strong>{current.time}</strong></div><div className={styles.briefRow}><span>مستوى الصعوبة</span><strong>{current.level}</strong></div>
+            <div className={styles.reportBox}><span><ShieldAlert size={15} /> تقرير أولي</span><p>{current.report}</p></div>
+            <div className={styles.readyBox}><div className={styles.readyIcon}><Target size={18} /></div><strong>هل كوّنت فرضيتك؟</strong><p>راجع الأدلة وأقوال الجميع قبل اختيار المتهم.</p><button onClick={finishCase}>توجيه الاتهام <ArrowLeft size={15} /></button></div>
+            <button className={styles.hintButton} onClick={() => setShowReport(true)}><CircleHelp size={15} /> طريقة اللعب والتلميحات</button>
+          </aside>
+        </div>
+      </section>}
 
-      {showSettings && <div className={styles.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) setShowSettings(false); }}>
-        <form className={styles.modal} onSubmit={(e) => { e.preventDefault(); setShowSettings(false); setToast('تم حفظ إعدادات المتجر'); }}>
-          <div className={styles.modalHeader}><div><span className={styles.modalIcon}><Settings2 size={19} /></span><h2>إعدادات المتجر</h2><p>خصص اسم متجرك وطريقة التواصل مع الزبائن.</p></div><button type="button" className={styles.closeButton} onClick={() => setShowSettings(false)}><X size={19} /></button></div>
-          <label>اسم المتجر<input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="اسم مشروعك" /></label>
-          <label>رقم واتساب مع رمز الدولة<input dir="ltr" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="213xxxxxxxxx" /><span className={styles.fieldHint}>مثال الجزائر: 213 ثم رقم الهاتف دون الصفر الأول.</span></label>
-          <div className={styles.settingsNote}><MessageCircle size={17} /><span>عند ضغط الزبون على «اطلب عبر واتساب»، ستفتح محادثة برسالة تحتوي على اسم المنتج وسعره.</span></div>
-          <div className={styles.modalActions}><button type="button" className={styles.cancelButton} onClick={() => setShowSettings(false)}>إلغاء</button><button type="submit" className={styles.primaryButton}><Check size={16} /> حفظ الإعدادات</button></div>
-        </form>
-      </div>}
+      {screen === 'result' && <section className={styles.resultScreen}>
+        <div className={styles.resultCard}><div className={styles.resultSeal}><Target size={35} /></div><span className={styles.sectionKicker}>المرحلة الأخيرة / توجيه الاتهام</span><h1>من تعتقد أنه المسؤول؟</h1><p>اختر الشخص الذي ترى أن الأدلة تشير إليه. فكّر جيدًا، فليس كل من يخفي سرًا هو الجاني.</p>
+          <div className={styles.accusationList}>{current.suspects.map((suspect) => <button key={suspect.id} className={selectedSuspect === suspect.id ? styles.selectedAccusation : styles.accusationOption} onClick={() => setSelectedSuspect(suspect.id)}><span className={styles.accusationAvatar}>{suspect.name.slice(0, 1)}</span><span><strong>{suspect.name}</strong><small>{suspect.role}</small></span><span className={styles.radioMark}>{selectedSuspect === suspect.id ? <Check size={14} /> : null}</span></button>)}</div>
+          <button className={styles.primaryCta + ' ' + styles.submitAccusation} disabled={!selectedSuspect} onClick={() => setScreen('result')}>كشف الحقيقة <ArrowLeft size={17} /></button>
+          {selectedSuspect && <div className={styles.verdict}><div className={selectedSuspect === current.solution ? styles.verdictGood : styles.verdictBad}>{selectedSuspect === current.solution ? <BadgeCheck size={23} /> : <ShieldAlert size={23} />}<strong>{selectedSuspect === current.solution ? 'أحسنت! اتهام صحيح' : 'اتهام غير صحيح'}</strong></div><p>{current.explanation}</p><div className={styles.trueCulprit}>المسؤول في هذه القضية: <b>{current.suspects.find((s) => s.id === current.solution)?.name}</b></div><button className={styles.secondaryCta} onClick={() => startCase(caseIndex)}>إعادة التحقيق <ArrowRight size={15} /></button><button className={styles.secondaryCta} onClick={() => setScreen('home')}>العودة إلى الأرشيف <ArrowLeft size={15} /></button></div>}
+        </div>
+      </section>}
 
-      {toast && <div className={styles.toast}><span><Check size={16} /></span>{toast}</div>}
+      {showReport && <div className={styles.modalOverlay} onMouseDown={(e) => { if (e.target === e.currentTarget) setShowReport(false); }}><section className={styles.helpModal}><button className={styles.modalClose} onClick={() => setShowReport(false)}><X size={18} /></button><span className={styles.helpModalIcon}><CircleHelp size={25} /></span><span className={styles.sectionKicker}>دليل المحقق</span><h2>كيف تلعب ملف 404؟</h2><div className={styles.helpStep}><span>01</span><div><strong>افحص الأدلة</strong><p>افتح كل دليل واقرأ تفاصيله. قد تكون معلومة صغيرة هي مفتاح الحل.</p></div></div><div className={styles.helpStep}><span>02</span><div><strong>استجوب المشتبه بهم</strong><p>اقرأ أقوالهم والأسرار التي قد تتعارض مع الأدلة.</p></div></div><div className={styles.helpStep}><span>03</span><div><strong>دوّن فرضيتك</strong><p>استخدم دفتر المحقق لربط التوقيت والدوافع والآثار.</p></div></div><div className={styles.helpStep}><span>04</span><div><strong>وجّه الاتهام</strong><p>اختر الشخص الذي تفسر الأدلة تصرفاته، ثم اكشف الحقيقة.</p></div></div><button className={styles.primaryCta} onClick={() => setShowReport(false)}>فهمت، لنحقق! <ArrowLeft size={16} /></button></section></div>}
+      {toast && <div className={styles.toast}><Check size={16} /> {toast}<button onClick={() => setToast('')}><X size={14} /></button></div>}
     </main>
   );
 }

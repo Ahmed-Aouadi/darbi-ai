@@ -47,3 +47,12 @@
 .flashDots button{width:7px;height:7px;border:0;border-radius:20px;background:#d9d8e8;padding:0}
 .flashDots button.flashDotActive{width:22px;background:#635bd9}
 @media(max-width:600px){.quizArea,.flashArea{padding:13px}.questionCard{padding:13px}.questionCard h4{font-size:13px}.quizOption{font-size:11px;padding:10px}.flashCard{min-height:250px;padding:24px 17px}.flashMain{font-size:17px}.flashControls>button{padding:9px}.quizFooter{flex-wrap:wrap}}
+
+
+.flashRating{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding:12px 13px;border:1px solid #ecebf5;border-radius:12px;background:#fff}
+.flashRating>span{font-size:11px;color:#85869b}
+.flashRating>div{display:flex;align-items:center;gap:7px}
+.flashRating button{display:flex;align-items:center;gap:5px;border:1px solid #e7e6f0;background:#fff;border-radius:9px;padding:8px 10px;color:#77788e;font-size:10px}
+.flashRating button.ratingKnown{border-color:#a8e2ca;background:#edfaf4;color:#21815c}
+.flashRating button.ratingReview{border-color:#d2cef9;background:#f4f2ff;color:#6259d6}
+@media(max-width:600px){.flashRating{align-items:flex-start;flex-direction:column}.flashRating>div{width:100%}.flashRating button{flex:1;justify-content:center}}

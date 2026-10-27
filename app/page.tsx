@@ -30,6 +30,8 @@ export default function Home() {
   const [flashIndex, setFlashIndex] = useState(0);
   const [flashFlipped, setFlashFlipped] = useState(false);
   const [knownCards, setKnownCards] = useState<number[]>([]);
+  const [lessonLoaded, setLessonLoaded] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -37,14 +39,16 @@ export default function Home() {
       const saved = window.localStorage.getItem('darbi-lesson-v1');
       if (saved) setLesson(saved);
     } catch { /* Storage can be disabled by the browser. */ }
+    finally { setLessonLoaded(true); }
   }, []);
 
   useEffect(() => {
+    if (!lessonLoaded) return;
     try {
       if (lesson.trim()) window.localStorage.setItem('darbi-lesson-v1', lesson);
       else window.localStorage.removeItem('darbi-lesson-v1');
     } catch { /* Keep the editor usable when storage is unavailable. */ }
-  }, [lesson]);
+  }, [lesson, lessonLoaded]);
 
   const sampleLesson = 'التمثيل الضوئي عملية حيوية تقوم بها النباتات الخضراء لصنع غذائها باستخدام ضوء الشمس.\n\nتمتص الجذور الماء والأملاح المعدنية من التربة، بينما تمتص الأوراق ثاني أكسيد الكربون من الهواء. ويساعد اليخضور الموجود في الأوراق على التقاط الطاقة الضوئية.\n\nتنتج هذه العملية سكريات تستعملها النبتة للحصول على الطاقة والنمو، وينطلق الأكسجين إلى الهواء. لذلك يُعد التمثيل الضوئي مهمًا لاستمرار الحياة على الأرض.';
 
@@ -202,21 +206,21 @@ export default function Home() {
   }
 
   return <main className={styles.app}>
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${mobileNavOpen ? styles.sidebarOpen : ""}`}>
       <a className={styles.brand} href="#home"><span className={styles.brandIcon}><GraduationCap size={25}/></span><span><b>دَرْبي</b><small>تعلّم بذكاء</small></span><span className={styles.aiTag}>AI</span></a>
       <div className={styles.sideLabel}>مساحة التعلّم</div>
-      <a className={`${styles.navItem} ${styles.navActive}`} href="#home"><Layers3 size={18}/> لوحة التعلّم</a>
-      <a className={styles.navItem} href="#workspace"><BookOpen size={18}/> مساعد الدروس</a>
-      <button className={styles.navItem} onClick={() => runTask('quiz')}><CircleHelp size={18}/> اختبار من درسي</button>
-      <button className={styles.navItem} onClick={() => runTask('flashcards')}><Target size={18}/> بطاقات المراجعة</button>
+      <a onClick={() => setMobileNavOpen(false)} className={`${styles.navItem} ${styles.navActive}`} href="#home"><Layers3 size={18}/> لوحة التعلّم</a>
+      <a onClick={() => setMobileNavOpen(false)} className={styles.navItem} href="#workspace"><BookOpen size={18}/> مساعد الدروس</a>
+      <button className={styles.navItem} onClick={() => { setMobileNavOpen(false); runTask('quiz'); }}><CircleHelp size={18}/> اختبار من درسي</button>
+      <button className={styles.navItem} onClick={() => { setMobileNavOpen(false); runTask('flashcards'); }}><Target size={18}/> بطاقات المراجعة</button>
       <div className={styles.sideLabel}>حسابك</div>
-      <a className={styles.navItem} href="#plan"><CalendarDays size={18}/> خطة المراجعة</a>
+      <a onClick={() => setMobileNavOpen(false)} className={styles.navItem} href="#plan"><CalendarDays size={18}/> خطة المراجعة</a>
       <div className={styles.sidebarBottom}><div className={styles.tipIcon}><Lightbulb size={18}/></div><b>خطوة صغيرة كل يوم</b><p>راجع درسًا واحدًا اليوم، وستقترب من هدفك أكثر.</p><span className={styles.tipProgress}><i/></span><small>ابدأ بأول درس لك</small></div>
       <div className={styles.sideFooter}>نسخة تجريبية · دَرْبي AI</div>
     </aside>
 
     <section className={styles.main} id="home">
-      <header className={styles.topbar}><button className={styles.mobileMenu} aria-label="القائمة"><Menu size={21}/></button><div className={styles.breadcrumb}>مساحة التعلّم <ChevronLeft size={15}/> <b>الرئيسية</b></div><div className={styles.topRight}><span className={styles.onlineDot}/> مساحة تعلّمك جاهزة <div className={styles.avatar}>ط</div></div></header>
+      <header className={styles.topbar}><button className={styles.mobileMenu} aria-label={mobileNavOpen ? "إغلاق القائمة" : "فتح القائمة"} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={21}/> : <Menu size={21}/>}</button><div className={styles.breadcrumb}>مساحة التعلّم <ChevronLeft size={15}/> <b>الرئيسية</b></div><div className={styles.topRight}><span className={styles.onlineDot}/> مساحة تعلّمك جاهزة <div className={styles.avatar}>ط</div></div></header>
       <div className={styles.content}>
         <section className={styles.welcome}><div><div className={styles.eyebrow}><Sparkles size={15}/> تعلّم بطريقة أذكى</div><h1>كل درس، فرصة جديدة <span>للنجاح.</span></h1><p>أدوات مراجعة تعمل مباشرة على جهازك، دون مفتاح API أو اشتراك.</p></div><div className={styles.heroArt}><div className={styles.heroGlow}/><div className={styles.heroBook}><BookOpen size={51}/><Sparkles className={styles.sparkleOne} size={20}/><span className={styles.heroOrbit}>AI</span></div><div className={styles.floatCard}><Check size={15}/> تعلّمك يتقدّم</div></div></section>
 

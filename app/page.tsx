@@ -232,6 +232,7 @@ export default function Home() {
               <span className={styles.flashMain}>{flashFlipped ? result.cards[flashIndex].answer : result.cards[flashIndex].question}</span>
               <span className={styles.flashHint}><Layers3 size={15}/>{flashFlipped ? 'اضغط للعودة إلى السؤال' : 'اضغط على البطاقة لكشف الإجابة'}</span>
             </button>
+            <div className={styles.flashRating}><span>هل أتقنت هذه البطاقة؟</span><div><button className={knownCards.includes(flashIndex) ? styles.ratingKnown : ''} onClick={() => setKnownCards((current) => current.includes(flashIndex) ? current : [...current, flashIndex])}><Check size={15}/> أتقنتها</button><button className={!knownCards.includes(flashIndex) ? styles.ratingReview : ''} onClick={() => setKnownCards((current) => current.filter((item) => item !== flashIndex))}>أراجعها لاحقًا</button></div></div>
             <div className={styles.flashControls}><button disabled={flashIndex === 0} onClick={() => {setFlashIndex((i) => i - 1);setFlashFlipped(false);}}>السابق</button><div className={styles.flashDots}>{result.cards.map((_, i) => <button key={i} aria-label={`البطاقة ${i+1}`} className={i === flashIndex ? styles.flashDotActive : ''} onClick={() => {setFlashIndex(i);setFlashFlipped(false);}} />)}</div><button disabled={flashIndex === result.cards!.length - 1} onClick={() => {setFlashIndex((i) => i + 1);setFlashFlipped(false);}}>التالي <ChevronLeft size={15}/></button></div>
           </div>}
           {result.text && <div className={styles.resultText}>{result.text}</div>}

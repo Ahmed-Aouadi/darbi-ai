@@ -84,84 +84,121 @@ export default function Home() {
     } catch (e) { setError(e instanceof Error ? e.message : 'تعذرت قراءة الملف.'); setFileName(''); }
   }
 
-  function makeLocalResult(task: Task, source: string): string {
-    const clean = source.replace(/\s+/g, ' ').trim();
-    const sentences = (source.match(/[^.!؟?\n]+[.!؟?]?/g) || [])
-      .map((s) => s.trim())
-      .filter((s) => s.length > 25);
-    const chunks = sentences.length ? sentences : clean.split(/[،؛,;]/).map((s) => s.trim()).filter((s) => s.length > 20);
-    const words = clean.match(/[\p{L}\p{N}]{4,}/gu) || [];
-    const stop = new Set(['التي','الذي','الذين','على','إلى','إليها','عليها','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','أنها','أنه','إنها','إنه','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','من','إلى','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن','هذا','هذه','the','and','that','with','from','this','have','are','for','was','were','into','their','they','which','what','when','where','your','you']);
-    const frequency = new Map<string, number>();
-    words.forEach((word) => {
-      const key = word.toLowerCase();
-      if (!stop.has(key)) frequency.set(key, (frequency.get(key) || 0) + 1);
-    });
-    const keywords = [...frequency.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([word]) => word);
-    const take = (count: number) => chunks.slice(0, count);
-    if (task === 'summary') {
-      const selected = chunks.length > 6
-        ? [...chunks].sort((a, b) => b.length - a.length).slice(0, Math.min(6, chunks.length))
-        : chunks;
-      return 'ملخص من النص الذي أدخلته\n\n' + (selected.length
-        ? selected.map((s, i) => `${i + 1}. ${s}`).join('\n\n')
-        : clean) + (keywords.length ? '\n\nمصطلحات متكررة في الدرس: ' + keywords.slice(0, 8).join('، ') : '');
-    }
-    if (task === 'quiz') {
-      const candidates = chunks.filter((s) => s.split(/\s+/).length >= 6).slice(0, 8);
-      if (!candidates.length) return 'النص قصير جدًا لإنشاء أسئلة مناسبة. أضف فقرات أخرى إلى الدرس ثم حاول مجددًا.';
-      return 'اختبر فهمك — حاول الإجابة قبل إظهار الإجابة النموذجية\n\n' + candidates.map((s, i) => {
-        const term = keywords.find((word) => s.toLowerCase().includes(word.toLowerCase()));
-        const termIndex = term ? s.toLowerCase().indexOf(term.toLowerCase()) : -1;
-        const answer = termIndex >= 0 ? s.slice(0, termIndex) + '________' + s.slice(termIndex + term!.length) : s.split(/\s+/).slice(0, Math.max(3, Math.floor(s.split(/\s+/).length / 2))).join(' ') + ' ________';
-        return `س${i + 1}: أكمل العبارة التالية: ${answer}\nالإجابة النموذجية: ${s}`;
-      }).join('\n\n');
-    }
-    if (task === 'explain') {
-      return 'شرح منظّم اعتمادًا على نص الدرس\n\n' +
-        'الفكرة العامة: ' + (chunks[0] || clean.slice(0, 350)) + '\n\n' +
-        'الأفكار الأساسية:\n' + take(5).map((s, i) => `${i + 1}. ${s}`).join('\n\n') +
-        (keywords.length ? '\n\nمصطلحات يجدر بك فهمها: ' + keywords.slice(0, 8).join('، ') : '') +
-        '\n\nطريقة المراجعة: اقرأ كل فكرة، ثم أعد شرحها بكلماتك، واكتب مثالًا من عندك قبل الانتقال إلى الفكرة التالية.';
-    }
-    const cards = (chunks.length ? chunks : [clean]).slice(0, 10);
-    return 'بطاقات المراجعة — غطِّ الإجابة وحاول تذكّرها\n\n' + cards.map((s, i) => {
-      const term = keywords.find((word) => s.toLowerCase().includes(word.toLowerCase()));
-      const question = term ? `ما الفكرة أو المعلومة المتعلقة بـ «${term}»؟` : `ما الفكرة الأساسية في الجزء ${i + 1} من الدرس؟`;
-      return `البطاقة ${i + 1}\nالسؤال: ${question}\nالإجابة: ${s}`;
-    }).join('\n\n────────────\n\n');
-  }
+  const stopWords = new Set([
+    'التي','الذي','الذين','اللذين','اللاتي','اللواتي','على','إلى','الى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','كانت','كانوا','تكون','يكون','يمكن','كما','وهي','وهو','بعد','قبل','أكثر','اقل','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن','أنا','نحن','أنت','أنتم','إن','أن','إذا','إذ','أو','بل','حتى','لكن','لأن','لذلك','بها','به','له','لها','من','عن','مع','وقد','كما','أيضا','أيضًا','حيثما','عليه','عليها','الذي','التي','the','and','that','with','from','this','have','are','for','was','were','into','their','they','which','what','when','where','your','you','then','than','this','these','those','can','will','its','not','use','using'
+  ]);
 
   function splitLesson(source: string): string[] {
     return source
-      .replace(/\r/g, '\n')
-      .split(/(?<=[.!؟?؛])\s+|\n+/)
-      .map((part) => part.trim())
-      .filter((part) => part.length > 25);
+      .replace(/\\r/g, '\\n')
+      .replace(/[\\t ]+/g, ' ')
+      .split(/(?<=[.!؟?؛])\\s+|\\n+/)
+      .map((part) => part.trim().replace(/^[-•*\\d.\\s]+/, ''))
+      .filter((part) => part.length > 18 && part.split(/\\s+/).length >= 4);
+  }
+
+  function getKeywords(source: string): string[] {
+    const tokens = source.match(/[\\p{L}\\p{N}]{3,}/gu) || [];
+    const frequency = new Map<string, number>();
+    tokens.forEach((token) => {
+      const word = token.toLocaleLowerCase('ar');
+      if (stopWords.has(word) || /^\\d+$/.test(word)) return;
+      frequency.set(word, (frequency.get(word) || 0) + 1);
+    });
+    return [...frequency.entries()]
+      .sort((a, b) => (b[1] - a[1]) || (b[0].length - a[0].length))
+      .map(([word]) => word);
+  }
+
+  function sentenceScore(sentence: string, keywords: string[]): number {
+    const normalized = sentence.toLocaleLowerCase('ar');
+    const words = normalized.match(/[\\p{L}\\p{N}]{3,}/gu) || [];
+    const unique = new Set(words.filter((word) => !stopWords.has(word)));
+    const keywordHits = keywords.filter((word) => normalized.includes(word)).length;
+    return keywordHits * 3 + Math.min(unique.size, 8) + Math.min(sentence.length / 120, 2);
+  }
+
+  function makeLocalResult(task: Task, source: string): string {
+    const clean = source.replace(/\\s+/g, ' ').trim();
+    const chunks = splitLesson(source);
+    const keywords = getKeywords(source);
+    if (task === 'summary') {
+      if (!chunks.length) return 'لم أجد جملًا كافية لتلخيصها. أضف نصًا أطول مع جمل مكتملة.';
+      const ranked = chunks
+        .map((sentence, index) => ({ sentence, index, score: sentenceScore(sentence, keywords) }))
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .slice(0, Math.min(6, Math.max(3, Math.ceil(chunks.length * 0.4))))
+        .sort((a, b) => a.index - b.index);
+      return 'ملخص مستخرج من نص الدرس\\n\\n' +
+        ranked.map(({ sentence }, i) => `• ${sentence}`).join('\\n\\n') +
+        (keywords.length ? '\\n\\n**مصطلحات أساسية في النص:** ' + keywords.slice(0, 8).join('، ') : '') +
+        '\\n\\n**للتأكد من الفهم:** حاول تلخيص الدرس في جملتين من ذاكرتك، ثم قارن إجابتك بالنقاط أعلاه.';
+    }
+    if (task === 'explain') {
+      if (!chunks.length) return clean;
+      const keySentences = chunks
+        .map((sentence, index) => ({ sentence, index, score: sentenceScore(sentence, keywords) }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, Math.min(5, chunks.length))
+        .sort((a, b) => a.index - b.index);
+      const glossary = keywords.slice(0, 6).map((term) => {
+        const sentence = chunks.find((part) => part.toLocaleLowerCase('ar').includes(term));
+        return sentence ? `• **${term}**: ورد المصطلح في هذا السياق: ${sentence}` : '';
+      }).filter(Boolean);
+      return 'شرح منظّم اعتمادًا على محتوى الدرس\\n\\n' +
+        '**الفكرة المحورية**\\n' + (keySentences[0]?.sentence || clean.slice(0, 300)) +
+        '\\n\\n**الأفكار بالترتيب**\\n' + keySentences.map(({ sentence }, i) => `${i + 1}. ${sentence}`).join('\\n\\n') +
+        (glossary.length ? '\\n\\n**مصطلحات من النص وسياقها**\\n' + glossary.join('\\n\\n') : '') +
+        '\\n\\n**اختبر فهمك بنفسك**\\n1. ما الفكرة الرئيسية دون النظر إلى النص؟\\n2. ما المصطلحان الأكثر أهمية، وكيف يرتبطان ببعضهما؟\\n3. اذكر معلومة واحدة تحتاج إلى مراجعتها.';
+    }
+    if (task === 'quiz') {
+      return 'أنشئ اختبارًا تفاعليًا من النص، ثم أجب عن الأسئلة في قسم الاختبار أدناه.';
+    }
+    const cards = buildFlashcards(source);
+    return 'بطاقات المراجعة\\n\\n' + cards.map((card, i) =>
+      `**البطاقة ${i + 1}**\\nالسؤال: ${card.question}\\nالإجابة: ${card.answer}`
+    ).join('\\n\\n────────────\\n\\n');
   }
 
   function buildQuiz(source: string): QuizQuestion[] {
     const chunks = splitLesson(source);
-    if (chunks.length < 2) return [];
-    const stop = new Set(['التي','الذي','الذين','على','إلى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن']);
-    const terms = [...new Set((source.match(/[\p{L}\p{N}]{4,}/gu) || []).map((word) => word.toLowerCase()).filter((word) => !stop.has(word)))];
+    const keywords = getKeywords(source);
+    if (chunks.length < 2 || keywords.length < 4) return [];
     const questions: QuizQuestion[] = [];
+    const usedTerms = new Set<string>();
+
     for (const [index, sentence] of chunks.entries()) {
-      const term = terms.find((word) => sentence.toLowerCase().includes(word));
+      const normalized = sentence.toLocaleLowerCase('ar');
+      const term = keywords
+        .filter((word) => !usedTerms.has(word) && normalized.includes(word) && word.length >= 4)
+        .sort((a, b) => b.length - a.length)[0];
       if (!term) continue;
-      const distractors = terms.filter((word) => word !== term && !sentence.toLowerCase().includes(word)).slice(index % 3, (index % 3) + 3);
+
+      const distractors = keywords
+        .filter((word) => word !== term && !normalized.includes(word) && !usedTerms.has(word))
+        .sort((a, b) => {
+          const frequencyA = (source.match(new RegExp(a.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'giu')) || []).length;
+          const frequencyB = (source.match(new RegExp(b.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'giu')) || []).length;
+          return frequencyB - frequencyA;
+        })
+        .slice(0, 3);
       if (distractors.length < 2) continue;
-      const options = [term, ...distractors].slice(0, 4);
-      const answer = (index * 3 + 1) % options.length;
-      [options[0], options[answer]] = [options[answer], options[0]];
-      const termPosition = sentence.toLowerCase().indexOf(term);
-      const blanked = sentence.slice(0, termPosition) + 'ــــــــــــ' + sentence.slice(termPosition + term.length);
+
+      const options = [term, ...distractors];
+      // Deterministic shuffle: avoids changing the answer position on every render.
+      const shift = (index * 3 + 1) % options.length;
+      const shuffled = options.map((_, i) => options[(i + shift) % options.length]);
+      const answer = shuffled.indexOf(term);
+      const termPosition = normalized.indexOf(term);
+      const originalTerm = sentence.slice(termPosition, termPosition + term.length);
+      const blanked = sentence.slice(0, termPosition) + 'ــــــــــــ' + sentence.slice(termPosition + originalTerm.length);
       questions.push({
-        question: 'أكمل العبارة من الدرس: «' + blanked + '»',
-        options,
+        question: 'أكمل العبارة بالمصطلح الصحيح: «' + blanked + '»',
+        options: shuffled,
         answer,
-        explanation: sentence
+        explanation: 'الإجابة من نص الدرس: ' + sentence
       });
+      usedTerms.add(term);
       if (questions.length >= 8) break;
     }
     return questions;
@@ -169,18 +206,29 @@ export default function Home() {
 
   function buildFlashcards(source: string): Flashcard[] {
     const chunks = splitLesson(source);
-    const words = source.match(/[\p{L}\p{N}]{4,}/gu) || [];
-    const frequency = new Map<string, number>();
-    const stop = new Set(['التي','الذي','الذين','على','إلى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن']);
-    words.forEach((word) => { const key = word.toLowerCase(); if (!stop.has(key)) frequency.set(key, (frequency.get(key) || 0) + 1); });
-    const keywords = [...frequency.entries()].sort((a,b) => b[1]-a[1]).map(([word]) => word);
-    return (chunks.length ? chunks : [source.trim()]).slice(0, 12).map((sentence, index) => {
-      const term = keywords.find((word) => sentence.toLowerCase().includes(word.toLowerCase()));
-      return {
-        question: term ? 'ما المعلومة الأساسية المتعلقة بـ «' + term + '»؟' : 'ما الفكرة الأساسية في الجزء ' + (index + 1) + '؟',
-        answer: sentence
-      };
-    });
+    const keywords = getKeywords(source);
+    const sentences = chunks.length ? chunks : [source.trim()].filter(Boolean);
+    const cards: Flashcard[] = [];
+    const usedTerms = new Set<string>();
+
+    for (const sentence of sentences) {
+      const normalized = sentence.toLocaleLowerCase('ar');
+      const term = keywords.find((word) => !usedTerms.has(word) && normalized.includes(word) && word.length >= 4);
+      if (term) {
+        cards.push({
+          question: `اشرح مصطلح «${term}» وفق ما ورد في الدرس.`,
+          answer: sentence
+        });
+        usedTerms.add(term);
+      } else {
+        cards.push({
+          question: `ما الفكرة الأساسية التي تذكرها هذه الجملة؟`,
+          answer: sentence
+        });
+      }
+      if (cards.length >= 12) break;
+    }
+    return cards;
   }
 
   async function runTask(task: Task) {

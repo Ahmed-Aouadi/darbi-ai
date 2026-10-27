@@ -12,7 +12,10 @@ if (typeof window !== 'undefined') {
 }
 
 type Task = 'summary' | 'quiz' | 'explain' | 'flashcards';
-type Result = { task: Task; title: string; text: string };
+type QuizQuestion = { question: string; options: string[]; answer: number; explanation: string };
+type Flashcard = { question: string; answer: string };
+type Result = { task: Task; title: string; text: string; quiz?: QuizQuestion[]; cards?: Flashcard[] };
+
 const taskLabels: Record<Task, string> = { summary: 'تلخيص الدرس', quiz: 'إنشاء اختبار', explain: 'شرح مبسّط', flashcards: 'بطاقات المراجعة' };
 
 export default function Home() {
@@ -22,6 +25,10 @@ export default function Home() {
   const [activeTask, setActiveTask] = useState<Task>('summary');
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState('');
+  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [flashIndex, setFlashIndex] = useState(0);
+  const [flashFlipped, setFlashFlipped] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   async function extractPdf(file: File) {
@@ -98,15 +105,67 @@ export default function Home() {
     }).join('\n\n────────────\n\n');
   }
 
+  function splitLesson(source: string): string[] {
+    return source.split(/(?<=[.!؟?])\\s+|\\n+/).map((part) => part.trim()).filter((part) => part.length > 25);
+  }
+
+  function buildQuiz(source: string): QuizQuestion[] {
+    const chunks = splitLesson(source);
+    if (chunks.length < 2) return [];
+    return chunks.slice(0, Math.min(8, chunks.length)).map((sentence, index) => {
+      const options = [sentence];
+      for (let step = 1; step < chunks.length && options.length < 4; step++) {
+        const candidate = chunks[(index + step) % chunks.length];
+        if (!options.includes(candidate)) options.push(candidate);
+      }
+      const correct = (index * 3 + 1) % options.length;
+      const shuffled = [...options];
+      const originalCorrect = shuffled.indexOf(sentence);
+      [shuffled[0], shuffled[originalCorrect]] = [shuffled[originalCorrect], shuffled[0]];
+      const answer = shuffled.indexOf(sentence);
+      return {
+        question: `أيّ عبارة وردت في الدرس؟`,
+        options: shuffled,
+        answer,
+        explanation: sentence
+      };
+    });
+  }
+
+  function buildFlashcards(source: string): Flashcard[] {
+    const chunks = splitLesson(source);
+    const words = source.match(/[\\p{L}\\p{N}]{4,}/gu) || [];
+    const frequency = new Map<string, number>();
+    const stop = new Set(['التي','الذي','الذين','على','إلى','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن']);
+    words.forEach((word) => { const key = word.toLowerCase(); if (!stop.has(key)) frequency.set(key, (frequency.get(key) || 0) + 1); });
+    const keywords = [...frequency.entries()].sort((a,b) => b[1]-a[1]).map(([word]) => word);
+    return (chunks.length ? chunks : [source.trim()]).slice(0, 12).map((sentence, index) => {
+      const term = keywords.find((word) => sentence.toLowerCase().includes(word.toLowerCase()));
+      return {
+        question: term ? `ما المعلومة الأساسية المتعلقة بـ «${term}»؟` : `ما الفكرة الأساسية في الجزء ${index + 1}؟`,
+        answer: sentence
+      };
+    });
+  }
+
+
   async function runTask(task: Task) {
     setActiveTask(task); setError('');
     if (lesson.trim().length < 30) { setError('أضف نص الدرس أو ارفع ملفًا أولًا (30 حرفًا على الأقل).'); return; }
-    setBusy(true); setResult(null);
+    setBusy(true); setResult(null); setQuizAnswers({}); setQuizSubmitted(false); setFlashIndex(0); setFlashFlipped(false);
     try {
-      // All study tools run locally in the browser; no API key or paid AI service is required.
-      await new Promise((resolve) => setTimeout(resolve, 180));
-      const output = makeLocalResult(task, lesson);
-      setResult({ task, title: taskLabels[task], text: output });
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      if (task === 'quiz') {
+        const quiz = buildQuiz(lesson);
+        if (quiz.length < 2) { setError('أضف فقرتين أو أكثر لإنشاء اختبار متنوع.'); return; }
+        setResult({ task, title: taskLabels[task], text: '', quiz });
+      } else if (task === 'flashcards') {
+        const cards = buildFlashcards(lesson);
+        setResult({ task, title: taskLabels[task], text: '', cards });
+      } else {
+        const output = makeLocalResult(task, lesson);
+        setResult({ task, title: taskLabels[task], text: output });
+      }
     } catch {
       setError('تعذّر تجهيز النتيجة. حاول تقليل طول النص أو تقسيم الدرس إلى أجزاء.');
     } finally { setBusy(false); }
@@ -147,7 +206,37 @@ export default function Home() {
           {busy && <div className={styles.loadingBox}><LoaderCircle className={styles.spinner} size={22}/><div><b>نحضّر لك تجربة التعلّم...</b><p>نرتّب محتوى الدرس محليًا دون اتصال بخدمة ذكاء اصطناعي.</p></div></div>}
         </section>
 
-        {result && <section className={styles.resultCard} aria-live="polite"><div className={styles.resultHeader}><div className={styles.resultBadge}><Sparkles size={17}/></div><div><h3>{result.title}</h3><p>تم الإنشاء بناءً على نص الدرس الذي أدخلته</p></div><button className={styles.copyButton} onClick={() => navigator.clipboard?.writeText(result.text).then(() => setError('تم نسخ النتيجة إلى الحافظة.')).catch(() => setError('تعذر النسخ تلقائيًا؛ حدّد النص وانسخه.'))}>نسخ النتيجة</button></div><div className={styles.resultText}>{result.text}</div></section>}
+        {result && <section className={styles.resultCard} aria-live="polite">
+          <div className={styles.resultHeader}><div className={styles.resultBadge}><Sparkles size={17}/></div><div><h3>{result.title}</h3><p>{result.task === 'quiz' ? 'أجب عن الأسئلة ثم اعرض التصحيح' : result.task === 'flashcards' ? 'اقلب البطاقة لتكشف الإجابة' : 'تم الإنشاء اعتمادًا على نص درسك'}</p></div>
+          {result.text && <button className={styles.copyButton} onClick={() => navigator.clipboard?.writeText(result.text).then(() => setError('تم نسخ النتيجة إلى الحافظة.')).catch(() => setError('تعذر النسخ تلقائيًا؛ حدّد النص وانسخه.'))}>نسخ النتيجة</button>}
+          </div>
+          {result.task === 'quiz' && result.quiz && <div className={styles.quizArea}>
+            <div className={styles.quizSummary}><span>اختبار قصير</span><b>{Object.keys(quizAnswers).length} / {result.quiz.length} إجابات</b></div>
+            <div className={styles.quizProgress}><i style={{width: `${Object.keys(quizAnswers).length / result.quiz.length * 100}%`}} /></div>
+            {result.quiz.map((question, index) => <article className={styles.questionCard} key={index}>
+              <div className={styles.questionMeta}><span>السؤال {index + 1}</span><span>اختيار من متعدد</span></div>
+              <h4>{question.question}</h4>
+              <div className={styles.optionsList}>{question.options.map((option, optionIndex) => {
+                const selected = quizAnswers[index] === optionIndex;
+                const correct = question.answer === optionIndex;
+                const optionClass = quizSubmitted ? (correct ? styles.optionCorrect : selected ? styles.optionWrong : '') : selected ? styles.optionSelected : '';
+                return <button key={optionIndex} className={`${styles.quizOption} ${optionClass}`} disabled={quizSubmitted} onClick={() => setQuizAnswers((current) => ({...current, [index]: optionIndex}))}><span className={styles.optionLetter}>{['أ','ب','ج','د'][optionIndex]}</span><span>{option}</span>{quizSubmitted && correct && <Check size={17}/>}</button>;
+              })}</div>
+              {quizSubmitted && <p className={styles.explanation}><b>التفسير:</b> {question.explanation}</p>}
+            </article>)}
+            <div className={styles.quizFooter}>{quizSubmitted ? <><b>نتيجتك: {result.quiz.filter((q, i) => quizAnswers[i] === q.answer).length} من {result.quiz.length}</b><button className={styles.primaryAction} onClick={() => {setQuizAnswers({});setQuizSubmitted(false);}}>أعد الاختبار</button></> : <button className={styles.primaryAction} onClick={() => setQuizSubmitted(true)} disabled={Object.keys(quizAnswers).length !== result.quiz.length}>تصحيح الإجابات</button>}</div>
+          </div>}
+          {result.task === 'flashcards' && result.cards && <div className={styles.flashArea}>
+            <div className={styles.flashTop}><span>بطاقاتك التعليمية</span><b>{flashIndex + 1} <small>/ {result.cards.length}</small></b></div>
+            <button className={`${styles.flashCard} ${flashFlipped ? styles.flashBack : ''}`} onClick={() => setFlashFlipped((value) => !value)} aria-label={flashFlipped ? 'إظهار السؤال' : 'إظهار الإجابة'}>
+              <span className={styles.flashKicker}>{flashFlipped ? 'الإجابة' : 'سؤال للمراجعة'}</span>
+              <span className={styles.flashMain}>{flashFlipped ? result.cards[flashIndex].answer : result.cards[flashIndex].question}</span>
+              <span className={styles.flashHint}><Layers3 size={15}/>{flashFlipped ? 'اضغط للعودة إلى السؤال' : 'اضغط على البطاقة لكشف الإجابة'}</span>
+            </button>
+            <div className={styles.flashControls}><button disabled={flashIndex === 0} onClick={() => {setFlashIndex((i) => i - 1);setFlashFlipped(false);}}>السابق</button><div className={styles.flashDots}>{result.cards.map((_, i) => <button key={i} aria-label={`البطاقة ${i+1}`} className={i === flashIndex ? styles.flashDotActive : ''} onClick={() => {setFlashIndex(i);setFlashFlipped(false);}} />)}</div><button disabled={flashIndex === result.cards!.length - 1} onClick={() => {setFlashIndex((i) => i + 1);setFlashFlipped(false);}}>التالي <ChevronLeft size={15}/></button></div>
+          </div>}
+          {result.text && <div className={styles.resultText}>{result.text}</div>}
+        </section>}
 
         <div className={styles.sectionHeading} id="plan"><div><h2>طريقة مذاكرة فعّالة</h2><p>خطوات بسيطة تساعدك على الاستفادة من كل جلسة.</p></div></div>
         <section className={styles.stepsGrid}><article className={styles.stepCard}><span className={styles.stepNumber}>١</span><div className={styles.stepIcon}><BookOpen size={19}/></div><h3>افهم أولًا</h3><p>ابدأ بملخص أو شرح مبسّط، ولا تحفظ ما لم تفهمه.</p></article><article className={styles.stepCard}><span className={styles.stepNumber}>٢</span><div className={styles.stepIcon}><BrainCircuit size={19}/></div><h3>اختبر نفسك</h3><p>أجب عن الأسئلة دون الرجوع إلى الدرس، ثم راجع أخطاءك.</p></article><article className={styles.stepCard}><span className={styles.stepNumber}>٣</span><div className={styles.stepIcon}><Clock3 size={19}/></div><h3>راجع لاحقًا</h3><p>عد إلى الأفكار الصعبة في اليوم التالي ثم بعد عدة أيام.</p></article></section>

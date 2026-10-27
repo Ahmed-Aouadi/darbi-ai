@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AlarmClock, ArrowDownLeft, ArrowLeft, ArrowUpLeft, BookOpen, Check, CheckCheck,
-  ChevronLeft, CircleHelp, Coffee, Flame, Focus, Leaf, ListTodo, Menu, Pause,
+  AlarmClock, ArrowLeft, ArrowUpLeft, BookOpen, Check, CheckCheck,
+  ChevronLeft, CircleHelp, Coffee, Flame, Leaf, ListTodo, Pause,
   Play, Plus, RotateCcw, Sparkles, Target, Timer, Trophy, X, Zap
 } from 'lucide-react';
 import styles from './page.module.css';

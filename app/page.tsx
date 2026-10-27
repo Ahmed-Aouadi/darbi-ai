@@ -118,11 +118,9 @@ export default function Home() {
         const candidate = chunks[(index + step) % chunks.length];
         if (!options.includes(candidate)) options.push(candidate);
       }
-      const correct = (index * 3 + 1) % options.length;
+      const answer = (index * 3 + 1) % options.length;
       const shuffled = [...options];
-      const originalCorrect = shuffled.indexOf(sentence);
-      [shuffled[0], shuffled[originalCorrect]] = [shuffled[originalCorrect], shuffled[0]];
-      const answer = shuffled.indexOf(sentence);
+      [shuffled[0], shuffled[answer]] = [shuffled[answer], shuffled[0]];
       return {
         question: `أيّ عبارة وردت في الدرس؟`,
         options: shuffled,

@@ -78,6 +78,11 @@ export default function Home() {
   const [found, setFound] = useState<string[]>([]);
   const [questioned, setQuestioned] = useState<string[]>([]);
   const [selectedSuspect, setSelectedSuspect] = useState('');
+  const [interviewing, setInterviewing] = useState('');
+  const [askedQuestions, setAskedQuestions] = useState<Record<string, string[]>>({});
+  const [interviewLog, setInterviewLog] = useState<{ suspectId: string; question: string; answer: string }[]>([]);
+  const [presentedEvidence, setPresentedEvidence] = useState<Record<string, string[]>>({});
+  const [accusationEvidence, setAccusationEvidence] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [showReport, setShowReport] = useState(false);
   const [showVerdict, setShowVerdict] = useState(false);
@@ -87,7 +92,7 @@ export default function Home() {
   const currentSuspect = useMemo(() => current.suspects.find((s) => s.id === selectedSuspect), [current, selectedSuspect]);
 
   const startCase = (index: number) => {
-    setCaseIndex(index); setFound([]); setQuestioned([]); setSelectedSuspect(''); setNotes(''); setTab('evidence'); setShowReport(false); setShowVerdict(false); setScreen('case');
+    setCaseIndex(index); setFound([]); setQuestioned([]); setSelectedSuspect(''); setInterviewing(''); setAskedQuestions({}); setInterviewLog([]); setPresentedEvidence({}); setAccusationEvidence([]); setNotes(''); setTab('evidence'); setShowReport(false); setShowVerdict(false); setScreen('case');
   };
   const finishCase = () => {
     if (found.length < 2 || questioned.length < 1) {
@@ -101,7 +106,45 @@ export default function Home() {
   const clueFound = (id: string) => {
     if (found.includes(id)) return;
     setFound((items) => [...items, id]);
-    setToast('تمت إضافة الدليل إلى ملف القضية');
+    setToast('أُضيف الدليل إلى ملفك. لا تفترض أنه يثبت الذنب وحده.');
+  };
+
+  const askQuestion = (suspectId: string, question: string) => {
+    const key = suspectId + ':' + question;
+    if ((askedQuestions[suspectId] || []).includes(question)) return;
+    const suspect = current.suspects.find((s) => s.id === suspectId);
+    if (!suspect) return;
+    const clueCount = found.length;
+    let answer = '';
+    if (question === 'where') {
+      answer = suspect.statement;
+    } else if (question === 'access') {
+      answer = suspectId === current.solution
+        ? 'أعرف المكان، لكن معرفتي به لا تعني أنني دخلت إليه. هل لديك دليل يضعني هناك؟'
+        : 'كانت لديّ أسباب عادية للتواجد في عملي، لكن لا أذكر أنني استخدمت شيئًا خارج مهمتي.';
+    } else {
+      answer = clueCount === 0
+        ? 'أنت تسألني عن التوقيت، لكن لم تعرض عليّ أي سجلّ أو أثر. أحضر دليلًا محددًا وسأجيب عنه.'
+        : suspectId === current.solution
+          ? 'لا أستطيع تأكيد هذا التوقيت من الذاكرة وحدها. ما الدليل الذي تريد مواجهتي به؟'
+          : 'بحسب ما أتذكر، لم ألاحظ شيئًا غير عادي. إن كان لديك سجلّ، يمكننا مقارنته بأقوالي.';
+    }
+    setAskedQuestions((prev) => ({ ...prev, [suspectId]: [...(prev[suspectId] || []), question] }));
+    setQuestioned((prev) => prev.includes(suspectId) ? prev : [...prev, suspectId]);
+    setInterviewLog((prev) => [...prev, { suspectId, question, answer }]);
+  };
+
+  const presentEvidence = (suspectId: string, clueId: string) => {
+    if (!found.includes(clueId)) return;
+    const clue = current.clues.find((item) => item.id === clueId);
+    const already = presentedEvidence[suspectId] || [];
+    if (already.includes(clueId)) return;
+    const response = suspectId === current.solution
+      ? 'يتوقف للحظة قبل الرد: «هذا لا يثبت أنني فعلت شيئًا. هل لديك دليل آخر يربط هذا الأثر بي مباشرة؟»'
+      : 'يلقي نظرة على الدليل: «لم أرَ هذا من قبل. أظن أن عليك مقارنة هذا الأثر ببقية الوقائع قبل استنتاج شيء».';
+    setPresentedEvidence((prev) => ({ ...prev, [suspectId]: [...(prev[suspectId] || []), clueId] }));
+    setInterviewLog((prev) => [...prev, { suspectId, question: 'مواجهة بالدليل: ' + (clue?.title || ''), answer: response }]);
+    setToast('سجّلت ردّ المشتبه به. قارن الردّ مع الأدلة الأخرى.');
   };
 
   return (
@@ -149,7 +192,15 @@ export default function Home() {
               <button className={tab === 'notes' ? styles.activeTab : ''} onClick={() => setTab('notes')}><FileText size={16} /> ملاحظاتي</button>
             </div>
             {tab === 'evidence' && <div className={styles.evidenceList}>{current.clues.map((clue) => <article key={clue.id} className={styles.evidenceCard}><div className={styles.evidenceIcon}>{clue.icon}</div><div className={styles.evidenceBody}><div className={styles.evidenceMeta}><span>{clue.kind}</span>{found.includes(clue.id) && <span className={styles.examined}><Check size={12} /> تمت المعاينة</span>}</div><h3>{clue.title}</h3><p>{found.includes(clue.id) ? clue.text : 'افتح هذا الدليل لفحص التفاصيل واكتشاف ما قد يخفيه.'}</p>{!found.includes(clue.id) && <button className={styles.inspectButton} onClick={() => clueFound(clue.id)}>فحص الدليل <ArrowLeft size={14} /></button>}</div></article>)}</div>}
-            {tab === 'suspects' && <div className={styles.suspectList}>{current.suspects.map((suspect) => <article className={styles.suspectCard} key={suspect.id}><div className={styles.suspectAvatar}>{suspect.name.slice(0, 1)}</div><div className={styles.suspectBody}><div className={styles.evidenceMeta}><span>{suspect.role}</span>{questioned.includes(suspect.id) && <span className={styles.examined}><Check size={12} /> تم الاستجواب</span>}</div><h3>{suspect.name}</h3><p>{questioned.includes(suspect.id) ? suspect.statement : 'ملف الشهادة مغلق. ابدأ الاستجواب لتسجيل أقواله.'}</p>{questioned.includes(suspect.id) ? <div className={styles.statement}><MessageSquareText size={14} /> معلومة متضاربة: {suspect.secret}</div> : <button className={styles.inspectButton} onClick={() => setQuestioned((items) => items.includes(suspect.id) ? items : [...items, suspect.id])}>استجواب المشتبه به <ArrowLeft size={14} /></button>}</div></article>)}</div>}
+            {tab === 'suspects' && <div className={styles.suspectList}>
+              <div className={styles.interviewIntro}><strong>غرفة الاستجواب</strong><p>اختر شخصًا، ثم حدّد سؤالًا. لن تُكشف الأسرار تلقائيًا؛ اجمع الأدلة أولًا وواجهه بما وجدته.</p></div>
+              {current.suspects.map((suspect) => <article className={styles.suspectCard} key={suspect.id}><div className={styles.suspectAvatar}>{suspect.name.slice(0, 1)}</div><div className={styles.suspectBody}><div className={styles.evidenceMeta}><span>{suspect.role}</span>{questioned.includes(suspect.id) && <span className={styles.examined}><Check size={12} /> جرى الحديث</span>}</div><h3>{suspect.name}</h3><p>{questioned.includes(suspect.id) ? 'تم تسجيل بعض الأقوال. يمكنك متابعة الأسئلة أو عرض دليل.' : 'لم تُسجّل إفادته بعد.'}<\/p><button className={styles.inspectButton} onClick={() => setInterviewing(interviewing === suspect.id ? '' : suspect.id)}>{interviewing === suspect.id ? 'إغلاق الاستجواب' : 'فتح الاستجواب'} <ArrowLeft size={14} /></button>
+                {interviewing === suspect.id && <div className={styles.interviewBox}><strong>ما الذي تريد سؤاله؟</strong><div className={styles.questionChoices}>{[{id:'where',label:'أين كنت وقت الحادث؟'},{id:'access',label:'هل كان بإمكانك الوصول إلى المكان؟'},{id:'time',label:'ماذا تعرف عن توقيت الحادث؟'}].map((q) => <button key={q.id} disabled={(askedQuestions[suspect.id] || []).includes(q.id)} onClick={() => askQuestion(suspect.id, q.id)}>{q.label}{(askedQuestions[suspect.id] || []).includes(q.id) && <Check size={13} />}</button>)}</div>
+                  <strong>واجهه بدليل عثرت عليه</strong><p className={styles.interviewHelp}>لا يمكنك عرض دليل لم تفحصه بعد.</p><div className={styles.questionChoices}>{current.clues.filter((clue) => found.includes(clue.id)).map((clue) => <button key={clue.id} disabled={(presentedEvidence[suspect.id] || []).includes(clue.id)} onClick={() => presentEvidence(suspect.id, clue.id)}>{clue.icon} {clue.title}</button>)}</div>
+                </div>}
+              </div></article>)}
+              {interviewLog.length > 0 && <div className={styles.interviewLog}><strong>محضر الاستجواب</strong>{interviewLog.slice().reverse().map((entry, idx) => <div key={entry.suspectId + entry.question + idx}><span>{current.suspects.find((s) => s.id === entry.suspectId)?.name} — {entry.question}</span><p>{entry.answer}</p></div>)}</div>}
+            </div>}
             {tab === 'notes' && <div className={styles.notesPane}><div className={styles.notesTitle}><FileText size={18} /><div><strong>دفتر المحقق</strong><span>ملاحظاتك خاصة بهذه الجلسة</span></div></div><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="دوّن التناقضات، اربط الأدلة ببعضها، واكتب فرضيتك هنا..." /><div className={styles.notesHint}>تلميح: قارن التوقيت مع الأدلة المادية قبل توجيه الاتهام.</div></div>}
           </section>
           <aside className={styles.sidePanel}>
@@ -165,8 +216,10 @@ export default function Home() {
       {screen === 'result' && <section className={styles.resultScreen}>
         <div className={styles.resultCard}><div className={styles.resultSeal}><Target size={35} /></div><span className={styles.sectionKicker}>المرحلة الأخيرة / توجيه الاتهام</span><h1>من تعتقد أنه المسؤول؟</h1><p>اختر الشخص الذي ترى أن الأدلة تشير إليه. فكّر جيدًا، فليس كل من يخفي سرًا هو الجاني.</p>
           <div className={styles.accusationList}>{current.suspects.map((suspect) => <button key={suspect.id} className={selectedSuspect === suspect.id ? styles.selectedAccusation : styles.accusationOption} onClick={() => setSelectedSuspect(suspect.id)}><span className={styles.accusationAvatar}>{suspect.name.slice(0, 1)}</span><span><strong>{suspect.name}</strong><small>{suspect.role}</small></span><span className={styles.radioMark}>{selectedSuspect === suspect.id ? <Check size={14} /> : null}</span></button>)}</div>
-          <button className={styles.primaryCta + ' ' + styles.submitAccusation} disabled={!selectedSuspect} onClick={() => setShowVerdict(true)}>كشف الحقيقة <ArrowLeft size={17} /></button>
-          {showVerdict && selectedSuspect && <div className={styles.verdict}><div className={selectedSuspect === current.solution ? styles.verdictGood : styles.verdictBad}>{selectedSuspect === current.solution ? <BadgeCheck size={23} /> : <ShieldAlert size={23} />}<strong>{selectedSuspect === current.solution ? 'أحسنت! اتهام صحيح' : 'اتهام غير صحيح'}</strong></div><p>{current.explanation}</p><div className={styles.trueCulprit}>المسؤول في هذه القضية: <b>{current.suspects.find((s) => s.id === current.solution)?.name}</b></div><button className={styles.secondaryCta} onClick={() => startCase(caseIndex)}>إعادة التحقيق <ArrowRight size={15} /></button><button className={styles.secondaryCta} onClick={() => setScreen('home')}>العودة إلى الأرشيف <ArrowLeft size={15} /></button></div>}
+          <strong className={styles.evidencePickTitle}>ما الدليل الذي يدعم اتهامك؟ اختر دليلين على الأقل.</strong>
+          <div className={styles.accusationEvidence}>{current.clues.filter((clue) => found.includes(clue.id)).map((clue) => <button key={clue.id} className={accusationEvidence.includes(clue.id) ? styles.evidenceChosen : ''} onClick={() => setAccusationEvidence((prev) => prev.includes(clue.id) ? prev.filter((id) => id !== clue.id) : [...prev, clue.id])}><span>{clue.icon}</span>{clue.title}<span>{accusationEvidence.includes(clue.id) ? '✓' : '+'}</span></button>)}</div>
+          <button className={styles.primaryCta + ' ' + styles.submitAccusation} disabled={!selectedSuspect || accusationEvidence.length < 2} onClick={() => setShowVerdict(true)}>تقديم الاتهام والأدلة <ArrowLeft size={17} /></button>
+          {showVerdict && selectedSuspect && <div className={styles.verdict}><div className={selectedSuspect === current.solution && accusationEvidence.some((id) => current.clues.find((clue) => clue.id === id)?.text.toLowerCase().includes('مسحوق')) ? styles.verdictGood : selectedSuspect === current.solution ? styles.verdictGood : styles.verdictBad}>{selectedSuspect === current.solution ? <BadgeCheck size={23} /> : <ShieldAlert size={23} />}<strong>{selectedSuspect === current.solution ? 'أحسنت! اتهام صحيح' : 'اتهام غير صحيح'}</strong></div><p>{current.explanation}</p><p className={styles.submittedEvidenceNote}>الأدلة التي استندت إليها: {current.clues.filter((clue) => accusationEvidence.includes(clue.id)).map((clue) => clue.title).join('، ')}.</p><div className={styles.trueCulprit}>المسؤول في هذه القضية: <b>{current.suspects.find((s) => s.id === current.solution)?.name}</b></div><button className={styles.secondaryCta} onClick={() => startCase(caseIndex)}>إعادة التحقيق <ArrowRight size={15} /></button><button className={styles.secondaryCta} onClick={() => setScreen('home')}>العودة إلى الأرشيف <ArrowLeft size={15} /></button></div>}
         </div>
       </section>}
 

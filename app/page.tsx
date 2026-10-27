@@ -51,17 +51,65 @@ export default function Home() {
     } catch (e) { setError(e instanceof Error ? e.message : 'تعذرت قراءة الملف.'); setFileName(''); }
   }
 
+  function makeLocalResult(task: Task, source: string): string {
+    const clean = source.replace(/\\s+/g, ' ').trim();
+    const sentences = (source.match(/[^.!؟?\\n]+[.!؟?]?/g) || [])
+      .map((s) => s.trim())
+      .filter((s) => s.length > 25);
+    const chunks = sentences.length ? sentences : clean.split(/[،؛,;]/).map((s) => s.trim()).filter((s) => s.length > 20);
+    const words = clean.match(/[\\p{L}\\p{N}]{4,}/gu) || [];
+    const stop = new Set(['التي','الذي','الذين','على','إلى','إليها','عليها','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','أنها','أنه','إنها','إنه','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','من','إلى','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن','هذا','هذه','the','and','that','with','from','this','have','are','for','was','were','into','their','they','which','what','when','where','your','you']);
+    const frequency = new Map<string, number>();
+    words.forEach((word) => {
+      const key = word.toLowerCase();
+      if (!stop.has(key)) frequency.set(key, (frequency.get(key) || 0) + 1);
+    });
+    const keywords = [...frequency.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([word]) => word);
+    const take = (count: number) => chunks.slice(0, count);
+    if (task === 'summary') {
+      const selected = chunks.length > 6
+        ? [...chunks].sort((a, b) => b.length - a.length).slice(0, Math.min(6, chunks.length))
+        : chunks;
+      return 'ملخص من النص الذي أدخلته\\n\\n' + (selected.length
+        ? selected.map((s, i) => `${i + 1}. ${s}`).join('\\n\\n')
+        : clean) + (keywords.length ? '\\n\\nمصطلحات متكررة في الدرس: ' + keywords.slice(0, 8).join('، ') : '');
+    }
+    if (task === 'quiz') {
+      const candidates = chunks.filter((s) => s.split(/\\s+/).length >= 6).slice(0, 8);
+      if (!candidates.length) return 'النص قصير جدًا لإنشاء أسئلة مناسبة. أضف فقرات أخرى إلى الدرس ثم حاول مجددًا.';
+      return 'اختبر فهمك — حاول الإجابة قبل إظهار الإجابة النموذجية\\n\\n' + candidates.map((s, i) => {
+        const term = keywords.find((word) => s.toLowerCase().includes(word.toLowerCase()));
+        const answer = term ? s.replace(new RegExp(term.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'i'), '________') : s.split(/\\s+/).slice(0, Math.max(3, Math.floor(s.split(/\\s+/).length / 2))).join(' ') + ' ________';
+        return `س${i + 1}: أكمل العبارة التالية: ${answer}\\nالإجابة النموذجية: ${s}`;
+      }).join('\\n\\n');
+    }
+    if (task === 'explain') {
+      return 'شرح منظّم اعتمادًا على نص الدرس\\n\\n' +
+        'الفكرة العامة: ' + (chunks[0] || clean.slice(0, 350)) + '\\n\\n' +
+        'الأفكار الأساسية:\\n' + take(5).map((s, i) => `${i + 1}. ${s}`).join('\\n\\n') +
+        (keywords.length ? '\\n\\nمصطلحات يجدر بك فهمها: ' + keywords.slice(0, 8).join('، ') : '') +
+        '\\n\\nطريقة المراجعة: اقرأ كل فكرة، ثم أعد شرحها بكلماتك، واكتب مثالًا من عندك قبل الانتقال إلى الفكرة التالية.';
+    }
+    const cards = (chunks.length ? chunks : [clean]).slice(0, 10);
+    return 'بطاقات المراجعة — غطِّ الإجابة وحاول تذكّرها\\n\\n' + cards.map((s, i) => {
+      const term = keywords.find((word) => s.toLowerCase().includes(word.toLowerCase()));
+      const question = term ? `ما الفكرة أو المعلومة المتعلقة بـ «${term}»؟` : `ما الفكرة الأساسية في الجزء ${i + 1} من الدرس؟`;
+      return `البطاقة ${i + 1}\\nالسؤال: ${question}\\nالإجابة: ${s}`;
+    }).join('\\n\\n────────────\\n\\n');
+  }
+
   async function runTask(task: Task) {
     setActiveTask(task); setError('');
     if (lesson.trim().length < 30) { setError('أضف نص الدرس أو ارفع ملفًا أولًا (30 حرفًا على الأقل).'); return; }
     setBusy(true); setResult(null);
     try {
-      const response = await fetch('/api/study', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task, content: lesson, language }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'حدث خطأ أثناء إنشاء المحتوى.');
-      setResult({ task, title: taskLabels[task], text: data.result });
-    } catch (e) { setError(e instanceof Error ? e.message : 'تعذر الاتصال. حاول مرة أخرى.'); }
-    finally { setBusy(false); }
+      // All study tools run locally in the browser; no API key or paid AI service is required.
+      await new Promise((resolve) => setTimeout(resolve, 180));
+      const output = makeLocalResult(task, lesson);
+      setResult({ task, title: taskLabels[task], text: output });
+    } catch {
+      setError('تعذّر تجهيز النتيجة. حاول تقليل طول النص أو تقسيم الدرس إلى أجزاء.');
+    } finally { setBusy(false); }
   }
 
   return <main className={styles.app}>
@@ -81,11 +129,11 @@ export default function Home() {
     <section className={styles.main} id="home">
       <header className={styles.topbar}><button className={styles.mobileMenu} aria-label="القائمة"><Menu size={21}/></button><div className={styles.breadcrumb}>مساحة التعلّم <ChevronLeft size={15}/> <b>الرئيسية</b></div><div className={styles.topRight}><span className={styles.onlineDot}/> مساحة تعلّمك جاهزة <div className={styles.avatar}>ط</div></div></header>
       <div className={styles.content}>
-        <section className={styles.welcome}><div><div className={styles.eyebrow}><Sparkles size={15}/> تعلّم بطريقة أذكى</div><h1>كل درس، فرصة جديدة <span>للنجاح.</span></h1><p>حوّل دروسك إلى ملخصات واختبارات، وافهم الصعب خطوة بخطوة.</p></div><div className={styles.heroArt}><div className={styles.heroGlow}/><div className={styles.heroBook}><BookOpen size={51}/><Sparkles className={styles.sparkleOne} size={20}/><span className={styles.heroOrbit}>AI</span></div><div className={styles.floatCard}><Check size={15}/> تعلّمك يتقدّم</div></div></section>
+        <section className={styles.welcome}><div><div className={styles.eyebrow}><Sparkles size={15}/> تعلّم بطريقة أذكى</div><h1>كل درس، فرصة جديدة <span>للنجاح.</span></h1><p>أدوات مراجعة تعمل مباشرة على جهازك، دون مفتاح API أو اشتراك.</p></div><div className={styles.heroArt}><div className={styles.heroGlow}/><div className={styles.heroBook}><BookOpen size={51}/><Sparkles className={styles.sparkleOne} size={20}/><span className={styles.heroOrbit}>AI</span></div><div className={styles.floatCard}><Check size={15}/> تعلّمك يتقدّم</div></div></section>
 
         <div className={styles.sectionHeading}><div><h2>ابدأ جلسة تعلّم</h2><p>أدخل درسًا، واختر كيف تريد أن تتعلّمه.</p></div><span className={styles.stepPill}><span>01</span> اختر الدرس</span></div>
         <section className={styles.workspace} id="workspace">
-          <div className={styles.inputHead}><div className={styles.inputTitleIcon}><FileText size={20}/></div><div><h3>ما الدرس الذي تراجعه اليوم؟</h3><p>الصق نص الدرس أو ارفع ملفًا لتبدأ.</p></div><span className={styles.secureLabel}><Check size={13}/> تحكّم في ملفاتك</span></div>
+          <div className={styles.inputHead}><div className={styles.inputTitleIcon}><FileText size={20}/></div><div><h3>ما الدرس الذي تراجعه اليوم؟</h3><p>الصق نص الدرس أو ارفع ملفًا. تتم المعالجة محليًا في متصفحك.</p></div><span className={styles.secureLabel}><Check size={13}/> تحكّم في ملفاتك</span></div>
           <textarea className={styles.lessonInput} value={lesson} onChange={e => {setLesson(e.target.value); setResult(null);}} placeholder={'الصق نص الدرس هنا...\n\nمثال: يُعرَّف التمثيل الضوئي بأنه العملية التي تستخدم فيها النباتات ضوء الشمس لتحويل الماء وثاني أكسيد الكربون إلى سكريات وأكسجين.'} maxLength={50000} aria-label="نص الدرس"/>
           <div className={styles.inputFooter}><div className={styles.fileActions}><button className={styles.uploadBtn} onClick={() => fileInput.current?.click()}><Upload size={16}/> رفع ملف PDF أو نص</button><input ref={fileInput} type="file" accept=".pdf,.txt,.md,.csv,text/plain,application/pdf" hidden onChange={e => onFileChange(e.target.files?.[0])}/>{fileName && <span className={styles.fileName}><FileText size={13}/>{fileName}<button aria-label="إزالة الملف" onClick={() => {setFileName('');setLesson('');if(fileInput.current)fileInput.current.value='';}}><X size={13}/></button></span>}</div><span className={styles.charCount}>{lesson.length.toLocaleString('ar')} / ٥٠٬٠٠٠</span></div>
           <div className={styles.actionDivider}/><div className={styles.actionHead}><span>ماذا تريد أن تفعل بالدرس؟</span><label className={styles.languageSelect}>لغة النتيجة <select value={language} onChange={e => setLanguage(e.target.value)}><option>العربية</option><option>الفرنسية</option><option>الإنجليزية</option></select></label></div>
@@ -96,7 +144,7 @@ export default function Home() {
             <button className={`${styles.taskCard} ${activeTask === 'flashcards' ? styles.taskSelected : ''}`} onClick={() => runTask('flashcards')} disabled={busy}><span className={`${styles.taskIcon} ${styles.blue}`}><Layers3 size={20}/></span><span><b>بطاقات المراجعة</b><small>سؤال وجواب للحفظ</small></span><ChevronLeft size={17} className={styles.taskArrow}/></button>
           </div>
           {error && <div className={styles.errorBox} role="alert"><CircleHelp size={18}/><span>{error}</span><button onClick={() => setError('')} aria-label="إغلاق"><X size={16}/></button></div>}
-          {busy && <div className={styles.loadingBox}><LoaderCircle className={styles.spinner} size={22}/><div><b>نحضّر لك تجربة التعلّم...</b><p>قد يستغرق ذلك بضع ثوانٍ.</p></div></div>}
+          {busy && <div className={styles.loadingBox}><LoaderCircle className={styles.spinner} size={22}/><div><b>نحضّر لك تجربة التعلّم...</b><p>نرتّب محتوى الدرس محليًا دون اتصال بخدمة ذكاء اصطناعي.</p></div></div>}
         </section>
 
         {result && <section className={styles.resultCard} aria-live="polite"><div className={styles.resultHeader}><div className={styles.resultBadge}><Sparkles size={17}/></div><div><h3>{result.title}</h3><p>تم الإنشاء بناءً على نص الدرس الذي أدخلته</p></div><button className={styles.copyButton} onClick={() => navigator.clipboard?.writeText(result.text).then(() => setError('تم نسخ النتيجة إلى الحافظة.')).catch(() => setError('تعذر النسخ تلقائيًا؛ حدّد النص وانسخه.'))}>نسخ النتيجة</button></div><div className={styles.resultText}>{result.text}</div></section>}

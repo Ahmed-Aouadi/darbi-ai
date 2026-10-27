@@ -33,6 +33,9 @@ export default function Home() {
   const [lessonLoaded, setLessonLoaded] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const wordCount = lesson.trim() ? lesson.trim().split(/\s+/).length : 0;
+  const sentenceCount = lesson.trim() ? splitLesson(lesson).length : 0;
+  const readingMinutes = Math.max(1, Math.ceil(wordCount / 180));
 
   useEffect(() => {
     try {
@@ -305,6 +308,12 @@ export default function Home() {
       <header className={styles.topbar}><button className={styles.mobileMenu} aria-label={mobileNavOpen ? "إغلاق القائمة" : "فتح القائمة"} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={21}/> : <Menu size={21}/>}</button><div className={styles.breadcrumb}>مساحة التعلّم <ChevronLeft size={15}/> <b>الرئيسية</b></div><div className={styles.topRight}><span className={styles.onlineDot}/> مساحة تعلّمك جاهزة <div className={styles.avatar}>ط</div></div></header>
       <div className={styles.content}>
         <section className={styles.welcome}><div><div className={styles.eyebrow}><Sparkles size={15}/> تعلّم بطريقة أذكى</div><h1>كل درس، فرصة جديدة <span>للنجاح.</span></h1><p>أدوات مراجعة تعمل مباشرة على جهازك، دون مفتاح API أو اشتراك.</p></div><div className={styles.heroArt}><div className={styles.heroGlow}/><div className={styles.heroBook}><BookOpen size={51}/><Sparkles className={styles.sparkleOne} size={20}/><span className={styles.heroOrbit}>AI</span></div><div className={styles.floatCard}><Check size={15}/> تعلّمك يتقدّم</div></div></section>
+
+        <section className={styles.metricsGrid} aria-label="إحصاءات الدرس">
+          <article className={styles.metricCard}><span className={styles.metricIcon}><FileText size={18}/></span><div><strong>{wordCount.toLocaleString('ar')}</strong><span>كلمة في الدرس</span></div><small>{lesson.trim() ? 'تم احتسابها تلقائيًا' : 'بانتظار نص الدرس'}</small></article>
+          <article className={styles.metricCard}><span className={styles.metricIcon}><BrainCircuit size={18}/></span><div><strong>{sentenceCount.toLocaleString('ar')}</strong><span>جملة قابلة للمراجعة</span></div><small>حسب علامات الترقيم</small></article>
+          <article className={styles.metricCard}><span className={styles.metricIcon}><Clock3 size={18}/></span><div><strong>{lesson.trim() ? readingMinutes.toLocaleString('ar') : '—'}</strong><span>دقيقة قراءة تقريبية</span></div><small>على أساس ١٨٠ كلمة/دقيقة</small></article>
+        </section>
 
         <div className={styles.sectionHeading}><div><h2>ابدأ جلسة تعلّم</h2><p>أدخل درسًا، واختر كيف تريد أن تتعلّمه.</p></div><span className={styles.stepPill}><span>01</span> اختر الدرس</span></div>
         <section className={styles.workspace} id="workspace">

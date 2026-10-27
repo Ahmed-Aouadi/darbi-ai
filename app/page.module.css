@@ -90,3 +90,13 @@
 .resultActions .copyButton{display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer;transition:background .18s,border-color .18s}
 .resultActions .copyButton:hover{background:#f6f5ff;border-color:#c9c5fa}
 @media(max-width:600px){.resultHeader{align-items:flex-start;flex-wrap:wrap}.resultActions{width:100%;margin-right:47px}.resultActions .copyButton{flex:1;justify-content:center}}
+
+.metricsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0 25px}
+.metricCard{display:flex;align-items:center;gap:11px;min-width:0;background:#fff;border:1px solid #e9e9f1;border-radius:14px;padding:14px 15px;box-shadow:0 4px 14px #27274b03}
+.metricIcon{width:39px;height:39px;flex-shrink:0;display:grid;place-items:center;border-radius:12px;background:#f0efff;color:#625bd9}
+.metricCard>div{min-width:0;display:flex;flex-direction:column;gap:2px}
+.metricCard strong{font-size:20px;line-height:1.3;color:#343550;font-variant-numeric:tabular-nums}
+.metricCard span:not(.metricIcon){font-size:11px;color:#74768c;white-space:nowrap}
+.metricCard small{margin-right:auto;color:#a0a1b1;font-size:9px;text-align:left;line-height:1.7}
+@media(max-width:1050px){.metricCard{flex-wrap:wrap}.metricCard small{width:100%;margin-right:0;text-align:right}}
+@media(max-width:600px){.metricsGrid{grid-template-columns:1fr;gap:8px;margin:12px 0 22px}.metricCard{flex-wrap:nowrap;padding:12px}.metricCard small{width:auto;margin-right:auto;text-align:left}.metricCard strong{font-size:18px}}

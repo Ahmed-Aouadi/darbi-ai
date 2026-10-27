@@ -79,7 +79,8 @@ export default function Home() {
   const [questioned, setQuestioned] = useState<string[]>([]);
   const [selectedSuspect, setSelectedSuspect] = useState('');
   const [notes, setNotes] = useState('');
-  const [showReport, setShowReport] = useState(false);\n  const [showVerdict, setShowVerdict] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showVerdict, setShowVerdict] = useState(false);
   const [toast, setToast] = useState('');
   const current = cases[caseIndex];
   const progress = Math.round(((found.length + questioned.length) / (current.clues.length + current.suspects.length)) * 100);

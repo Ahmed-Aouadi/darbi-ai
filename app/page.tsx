@@ -52,12 +52,12 @@ export default function Home() {
   }
 
   function makeLocalResult(task: Task, source: string): string {
-    const clean = source.replace(/\\s+/g, ' ').trim();
-    const sentences = (source.match(/[^.!؟?\\n]+[.!؟?]?/g) || [])
+    const clean = source.replace(/\s+/g, ' ').trim();
+    const sentences = (source.match(/[^.!؟?\n]+[.!؟?]?/g) || [])
       .map((s) => s.trim())
       .filter((s) => s.length > 25);
     const chunks = sentences.length ? sentences : clean.split(/[،؛,;]/).map((s) => s.trim()).filter((s) => s.length > 20);
-    const words = clean.match(/[\\p{L}\\p{N}]{4,}/gu) || [];
+    const words = clean.match(/[\p{L}\p{N}]{4,}/gu) || [];
     const stop = new Set(['التي','الذي','الذين','على','إلى','إليها','عليها','هذا','هذه','ذلك','تلك','هناك','حيث','عند','بين','منها','فيها','كان','تكون','يمكن','يكون','كما','وهي','وهو','أنها','أنه','إنها','إنه','بعد','قبل','أكثر','أقل','جميع','بعض','كل','عن','مع','من','إلى','في','ما','لا','لم','لن','ثم','قد','هو','هي','هم','هن','هذا','هذه','the','and','that','with','from','this','have','are','for','was','were','into','their','they','which','what','when','where','your','you']);
     const frequency = new Map<string, number>();
     words.forEach((word) => {
@@ -70,32 +70,33 @@ export default function Home() {
       const selected = chunks.length > 6
         ? [...chunks].sort((a, b) => b.length - a.length).slice(0, Math.min(6, chunks.length))
         : chunks;
-      return 'ملخص من النص الذي أدخلته\\n\\n' + (selected.length
-        ? selected.map((s, i) => `${i + 1}. ${s}`).join('\\n\\n')
-        : clean) + (keywords.length ? '\\n\\nمصطلحات متكررة في الدرس: ' + keywords.slice(0, 8).join('، ') : '');
+      return 'ملخص من النص الذي أدخلته\n\n' + (selected.length
+        ? selected.map((s, i) => `${i + 1}. ${s}`).join('\n\n')
+        : clean) + (keywords.length ? '\n\nمصطلحات متكررة في الدرس: ' + keywords.slice(0, 8).join('، ') : '');
     }
     if (task === 'quiz') {
-      const candidates = chunks.filter((s) => s.split(/\\s+/).length >= 6).slice(0, 8);
+      const candidates = chunks.filter((s) => s.split(/\s+/).length >= 6).slice(0, 8);
       if (!candidates.length) return 'النص قصير جدًا لإنشاء أسئلة مناسبة. أضف فقرات أخرى إلى الدرس ثم حاول مجددًا.';
-      return 'اختبر فهمك — حاول الإجابة قبل إظهار الإجابة النموذجية\\n\\n' + candidates.map((s, i) => {
+      return 'اختبر فهمك — حاول الإجابة قبل إظهار الإجابة النموذجية\n\n' + candidates.map((s, i) => {
         const term = keywords.find((word) => s.toLowerCase().includes(word.toLowerCase()));
-        const answer = term ? s.replace(new RegExp(term.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'i'), '________') : s.split(/\\s+/).slice(0, Math.max(3, Math.floor(s.split(/\\s+/).length / 2))).join(' ') + ' ________';
-        return `س${i + 1}: أكمل العبارة التالية: ${answer}\\nالإجابة النموذجية: ${s}`;
-      }).join('\\n\\n');
+        const termIndex = term ? s.toLowerCase().indexOf(term.toLowerCase()) : -1;
+        const answer = termIndex >= 0 ? s.slice(0, termIndex) + '________' + s.slice(termIndex + term!.length) : s.split(/\s+/).slice(0, Math.max(3, Math.floor(s.split(/\s+/).length / 2))).join(' ') + ' ________';
+        return `س${i + 1}: أكمل العبارة التالية: ${answer}\nالإجابة النموذجية: ${s}`;
+      }).join('\n\n');
     }
     if (task === 'explain') {
-      return 'شرح منظّم اعتمادًا على نص الدرس\\n\\n' +
-        'الفكرة العامة: ' + (chunks[0] || clean.slice(0, 350)) + '\\n\\n' +
-        'الأفكار الأساسية:\\n' + take(5).map((s, i) => `${i + 1}. ${s}`).join('\\n\\n') +
-        (keywords.length ? '\\n\\nمصطلحات يجدر بك فهمها: ' + keywords.slice(0, 8).join('، ') : '') +
-        '\\n\\nطريقة المراجعة: اقرأ كل فكرة، ثم أعد شرحها بكلماتك، واكتب مثالًا من عندك قبل الانتقال إلى الفكرة التالية.';
+      return 'شرح منظّم اعتمادًا على نص الدرس\n\n' +
+        'الفكرة العامة: ' + (chunks[0] || clean.slice(0, 350)) + '\n\n' +
+        'الأفكار الأساسية:\n' + take(5).map((s, i) => `${i + 1}. ${s}`).join('\n\n') +
+        (keywords.length ? '\n\nمصطلحات يجدر بك فهمها: ' + keywords.slice(0, 8).join('، ') : '') +
+        '\n\nطريقة المراجعة: اقرأ كل فكرة، ثم أعد شرحها بكلماتك، واكتب مثالًا من عندك قبل الانتقال إلى الفكرة التالية.';
     }
     const cards = (chunks.length ? chunks : [clean]).slice(0, 10);
-    return 'بطاقات المراجعة — غطِّ الإجابة وحاول تذكّرها\\n\\n' + cards.map((s, i) => {
+    return 'بطاقات المراجعة — غطِّ الإجابة وحاول تذكّرها\n\n' + cards.map((s, i) => {
       const term = keywords.find((word) => s.toLowerCase().includes(word.toLowerCase()));
       const question = term ? `ما الفكرة أو المعلومة المتعلقة بـ «${term}»؟` : `ما الفكرة الأساسية في الجزء ${i + 1} من الدرس؟`;
-      return `البطاقة ${i + 1}\\nالسؤال: ${question}\\nالإجابة: ${s}`;
-    }).join('\\n\\n────────────\\n\\n');
+      return `البطاقة ${i + 1}\nالسؤال: ${question}\nالإجابة: ${s}`;
+    }).join('\n\n────────────\n\n');
   }
 
   async function runTask(task: Task) {

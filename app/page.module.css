@@ -56,3 +56,32 @@
 .flashRating button.ratingKnown{border-color:#a8e2ca;background:#edfaf4;color:#21815c}
 .flashRating button.ratingReview{border-color:#d2cef9;background:#f4f2ff;color:#6259d6}
 @media(max-width:600px){.flashRating{align-items:flex-start;flex-direction:column}.flashRating>div{width:100%}.flashRating button{flex:1;justify-content:center}}
+
+
+/* Improved mobile navigation and interaction feedback */
+@media(max-width:760px){
+  .sidebar.sidebarOpen{
+    display:flex;
+    position:fixed;
+    z-index:30;
+    top:0;
+    right:0;
+    width:min(84vw,300px);
+    height:100dvh;
+    min-height:100dvh;
+    overflow-y:auto;
+    box-shadow:-18px 0 55px #20203a2b;
+    border-left:1px solid #e5e3f6;
+    animation:darbiDrawerIn .2s ease-out;
+  }
+  .sidebar.sidebarOpen .sidebarBottom{margin-top:28px}
+  .mobileMenu{position:relative;z-index:31;width:38px;height:38px;border-radius:11px;background:#f2f1ff}
+  .inputHead{align-items:flex-start}
+  .fileActions{width:100%}
+  .uploadBtn{min-height:38px}
+  .taskCard:focus-visible,.quizOption:focus-visible,.flashControls button:focus-visible{outline:3px solid #c9c5fa;outline-offset:2px}
+}
+@keyframes darbiDrawerIn{from{transform:translateX(18px);opacity:.7}to{transform:translateX(0);opacity:1}}
+.taskCard:active,.uploadBtn:active,.primaryAction:active{transform:translateY(1px)}
+.quizOption{overflow-wrap:anywhere}
+.flashMain{white-space:pre-wrap}

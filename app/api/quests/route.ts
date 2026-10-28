@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = await requireApiUser(request);
   if (!isApiAuth(auth)) return auth;
+  const { data: enabled, error: flagError } = await auth.userClient.rpc('is_feature_enabled', { p_key: 'ff_quests', p_user_id: auth.user.id });
+  if (flagError || !enabled) return Response.json({ error: 'المهمات غير مفعّلة لهذا الحساب.' }, { status: 404 });
   let body: unknown;
   try { body = await request.json(); } catch { return Response.json({ error: 'صيغة الطلب غير صالحة.' }, { status: 400 }); }
   const questId = (body as { questId?: unknown })?.questId;

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowUpLeft, Award, BookOpen, Check, ChevronDown, Clock3, Code2, Flame, Menu, Play, Search, Sparkles, Trophy, Users, Zap } from 'lucide-react';
 import styles from './page.module.css';
 import challengeData from '../content/challenges.json';
+import Wave1Panel from './wave1-panel';
 
 const challenges = challengeData.map((challenge, index) => ({
   id: index + 1,
@@ -113,6 +114,8 @@ export default function Home() {
     <section className={styles.statsStrip}>
       <div><span className={styles.statIcon}><Code2/></span><p><b>15+</b><small>تحديًا من واقعنا</small></p></div><div><span className={styles.statIcon}><Users/></span><p><b>دوري الأصدقاء</b><small>نافس جماعتك كل أسبوع</small></p></div><div><span className={styles.statIcon}><Flame/></span><p><b>خطوة بخطوة</b><small>من أول سطر حتى الاحتراف</small></p></div><div><span className={styles.statIcon}><Trophy/></span><p><b>اجمع النقاط</b><small>وافتح شارات جديدة</small></p></div>
     </section>
+
+    <Wave1Panel />
 
     <section className={styles.trySection} id="try">
       <div className={styles.sectionIntro}><div><span className={styles.kicker}>جرّب بنفسك</span><h2>أول تحدٍّ في أقل من دقيقتين</h2><p>ما تحتاجش حساب. عدّل الدالة واضغط شغّل باش تجرب.</p></div><span className={styles.challengeNumber}>التحدّي 01 <b>من {challenges.length}</b></span></div>

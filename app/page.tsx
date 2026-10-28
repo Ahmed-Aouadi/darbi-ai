@@ -113,7 +113,7 @@ export default function Home() {
     </section>
 
     <section className={styles.statsStrip}>
-      <div><span className={styles.statIcon}><Code2/></span><p><b>15+</b><small>تحديًا من واقعنا</small></p></div><div><span className={styles.statIcon}><Users/></span><p><b>دوري الأصدقاء</b><small>نافس جماعتك كل أسبوع</small></p></div><div><span className={styles.statIcon}><Flame/></span><p><b>خطوة بخطوة</b><small>من أول سطر حتى الاحتراف</small></p></div><div><span className={styles.statIcon}><Trophy/></span><p><b>اجمع النقاط</b><small>وافتح شارات جديدة</small></p></div>
+      <div><span className={styles.statIcon}><Code2/></span><p><b>{challenges.length}+</b><small>تحديًا من واقعنا</small></p></div><div><span className={styles.statIcon}><Users/></span><p><b>دوري الأصدقاء</b><small>نافس جماعتك كل أسبوع</small></p></div><div><span className={styles.statIcon}><Flame/></span><p><b>خطوة بخطوة</b><small>من أول سطر حتى الاحتراف</small></p></div><div><span className={styles.statIcon}><Trophy/></span><p><b>اجمع النقاط</b><small>وافتح شارات جديدة</small></p></div>
     </section>
 
     <Wave1Panel />

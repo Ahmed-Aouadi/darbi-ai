@@ -19,7 +19,14 @@ export async function POST(request: NextRequest) {
   }
   const payload = body.payload && typeof body.payload === 'object' && !Array.isArray(body.payload) ? body.payload : {};
   if (JSON.stringify(payload).length > 1800) return Response.json({ error: 'بيانات الحدث كبيرة جدًا.' }, { status: 413 });
-  const { error } = await auth.userClient.rpc('record_analytics_event', { p_event_name: body.eventName, p_payload: payload });
+  // The generated Supabase Database type does not yet include this migration-defined RPC.
+  const analyticsClient = auth.userClient as unknown as {
+    rpc: (name: 'record_analytics_event', args: { p_event_name: string; p_payload: Record<string, unknown> }) => Promise<{ error: { message: string } | null }>;
+  };
+  const { error } = await analyticsClient.rpc('record_analytics_event', {
+    p_event_name: body.eventName,
+    p_payload: payload as Record<string, unknown>,
+  });
   if (error) return Response.json({ error: 'تعذّر تسجيل الحدث.' }, { status: 429 });
   return Response.json({ recorded: true }, { status: 202, headers: { 'Cache-Control': 'no-store' } });
 }

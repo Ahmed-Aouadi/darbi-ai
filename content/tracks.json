@@ -25,58 +25,9 @@
     "water-schedule",
     "shortest-route"
   ],
-  "النصوص والعربية": [
-    "count-weak-letters",
-    "strip-tashkeel",
-    "palindrome",
-    "reverse-words",
-    "word-count",
-    "anagrams",
-    "top-words",
-    "edit-distance"
-  ],
-  "أسس البرمجة": [
-    "digit-sum",
-    "leap-year",
-    "ticket-price",
-    "count-pass",
-    "price-range",
-    "hottest-day",
-    "harvest-stats",
-    "stop-names",
-    "class-average",
-    "receipt-total",
-    "trip-cost"
-  ],
-  "البيانات والتحليل": [
-    "median-price",
-    "best-streak",
-    "top-words",
-    "dedupe-names",
-    "two-sum-market",
-    "flatten-orders",
-    "lcs",
-    "lis"
-  ],
-  "الخوارزميات الكلاسيكية": [
-    "balanced-brackets",
-    "find-house",
-    "rotate-shifts",
-    "bank-queue",
-    "caesar",
-    "roman",
-    "gcd-lcm",
-    "primes",
-    "add-times"
-  ],
-  "تحدّيات الصعب": [
-    "grid-path",
-    "oases-count",
-    "task-order",
-    "coin-ways",
-    "max-meetings",
-    "lis",
-    "lcs",
-    "edit-distance"
-  ]
+  "النصوص والعربية": [],
+  "أسس البرمجة": [],
+  "البيانات والتحليل": [],
+  "الخوارزميات الكلاسيكية": [],
+  "تحدّيات الصعب": []
 }

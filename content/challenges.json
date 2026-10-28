@@ -1,0 +1,1000 @@
+[
+ {
+  "slug": "nearest-bus",
+  "title": "أقرب حافلة",
+  "topic": "نقل",
+  "level": "easy",
+  "points": 10,
+  "story": "تنتظر حافلة النقل الحضري في المحطة، ولديك جدول مواعيد الانطلاق ليوم كامل.",
+  "task": "اكتب دالة nextBus(now, times) تعيد مصفوفة [موعد أقرب حافلة، دقائق الانتظار]. إن انتهت حافلات اليوم فأعد أول حافلة في اليوم التالي مع الدقائق حتى موعدها.",
+  "input_desc": "now نص بصيغة HH:MM، وtimes قائمة مواعيد مرتبة تصاعديًا بالصيغة نفسها (من 1 إلى 100 موعد).",
+  "output_desc": "مصفوفة: نص الموعد، وعدد صحيح للدقائق.",
+  "constraints": [
+   "نظام 24 ساعة",
+   "الموعد المطابق للوقت الحالي تمامًا يُحسب (0 دقيقة)"
+  ],
+  "examples": [
+   {
+    "args": [
+     "08:20",
+     [
+      "06:30",
+      "08:00",
+      "09:15",
+      "12:40"
+     ]
+    ],
+    "expected": [
+     "09:15",
+     55
+    ]
+   },
+   {
+    "args": [
+     "09:15",
+     [
+      "06:30",
+      "09:15"
+     ]
+    ],
+    "expected": [
+     "09:15",
+     0
+    ]
+   }
+  ],
+  "functionName": "nextBus",
+  "starter": {
+   "javascript": "function nextBus(now, times) {\n  // اكتب حلّك هنا\n}\n",
+   "python": "def nextBus(now, times):\n    # اكتب حلّك هنا\n    pass\n"
+  },
+  "tests": [
+   {
+    "args": [
+     "08:20",
+     [
+      "06:30",
+      "08:00",
+      "09:15",
+      "12:40"
+     ]
+    ],
+    "expected": [
+     "09:15",
+     55
+    ],
+    "hidden": false
+   },
+   {
+    "args": [
+     "09:15",
+     [
+      "06:30",
+      "09:15"
+     ]
+    ],
+    "expected": [
+     "09:15",
+     0
+    ],
+    "hidden": false
+   },
+   {
+    "args": [
+     "13:00",
+     [
+      "06:30",
+      "08:00",
+      "12:40"
+     ]
+    ],
+    "expected": [
+     "06:30",
+     1050
+    ],
+    "hidden": true
+   },
+   {
+    "args": [
+     "23:59",
+     [
+      "00:05"
+     ]
+    ],
+    "expected": [
+     "00:05",
+     6
+    ],
+    "hidden": true
+   },
+   {
+    "args": [
+     "00:00",
+     [
+      "00:00",
+      "12:00"
+     ]
+    ],
+    "expected": [
+     "00:00",
+     0
+    ],
+    "hidden": true
+   },
+   {
+    "args": [
+     "12:41",
+     [
+      "06:30",
+      "12:40"
+     ]
+    ],
+    "expected": [
+     "06:30",
+     1069
+    ],
+    "hidden": true
+   }
+  ],
+  "hint": "حوّل كل وقت إلى دقائق منذ منتصف الليل لتسهّل المقارنة.",
+  "tags": [
+   "نصوص",
+   "وقت",
+   "قوائم"
+  ],
+  "reference_python": "def nextBus(now,times):\n    m=lambda s:int(s[:2])*60+int(s[3:])\n    n=m(now)\n    for t in times:\n        if m(t)>=n:return [t,m(t)-n]\n    return [times[0],1440-n+m(times[0])]\n"
+ },
+ {
+  "slug": "electricity-bill",
+  "title": "فاتورة الكهرباء",
+  "topic": "منزل",
+  "level": "easy",
+  "points": 10,
+  "story": "وصلتك فاتورة الكهرباء وتريد أن تتأكد من حسابها بنفسك. (التعرفة هنا افتراضية للتدريب وليست التعرفة الرسمية.)",
+  "task": "اكتب دالة electricityBill(kwh) تحسب الفاتورة بالدينار: رسم ثابت 50، ثم 4 دنانير لكل كيلوواط ساعي من 1 إلى 125، و8 دنانير لكل واحد من 126 إلى 375، و12 دينارًا لكل واحد بعد 375.",
+  "input_desc": "kwh عدد صحيح من 0 إلى 10000.",
+  "output_desc": "عدد صحيح: قيمة الفاتورة.",
+  "constraints": [
+   "الرسم الثابت يُدفع حتى عند الاستهلاك صفر"
+  ],
+  "examples": [
+   {
+    "args": [
+     100
+    ],
+    "expected": 450
+   },
+   {
+    "args": [
+     125
+    ],
+    "expected": 550
+   }
+  ],
+  "functionName": "electricityBill",
+  "starter": {
+   "javascript": "function electricityBill(kwh) {\n  // اكتب حلّك هنا\n}\n",
+   "python": "def electricityBill(kwh):\n    # اكتب حلّك هنا\n    pass\n"
+  },
+  "tests": [
+   {
+    "args": [
+     100
+    ],
+    "expected": 450,
+    "hidden": false
+   },
+   {
+    "args": [
+     125
+    ],
+    "expected": 550,
+    "hidden": false
+   },
+   {
+    "args": [
+     200
+    ],
+    "expected": 1150,
+    "hidden": true
+   },
+   {
+    "args": [
+     375
+    ],
+    "expected": 2550,
+    "hidden": true
+   },
+   {
+    "args": [
+     500
+    ],
+    "expected": 4050,
+    "hidden": true
+   },
+   {
+    "args": [
+     0
+    ],
+    "expected": 50,
+    "hidden": true
+   }
+  ],
+  "hint": "احسب كل شريحة على حدة ثم اجمع.",
+  "tags": [
+   "شروط",
+   "حساب"
+  ],
+  "reference_python": "def electricityBill(kwh):\n    return 50+min(kwh,125)*4+max(0,min(kwh,375)-125)*8+max(0,kwh-375)*12\n"
+ },
+ {
+  "slug": "market-total",
+  "title": "ميزان السوق",
+  "topic": "سوق",
+  "level": "easy",
+  "points": 10,
+  "story": "في سوق الأسبوع أعلن تاجر عن خصم لمن يتجاوز مشترياته مبلغًا معينًا.",
+  "task": "اكتب دالة marketTotal(prices, threshold, percent) تعيد المبلغ المستحق: إن كان مجموع الأسعار أكبر من أو يساوي threshold فاخصم percent% وقرّب المبلغ المستحق إلى الأسفل لأقرب دينار صحيح، وإلا فالمجموع كما هو.",
+  "input_desc": "prices قائمة أعداد صحيحة (قد تكون فارغة)، وthreshold وpercent عددان صحيحان، percent بين 0 و100.",
+  "output_desc": "عدد صحيح: المبلغ المستحق.",
+  "constraints": [
+   "المبلغ المستحق = المجموع × (100 − percent) ÷ 100 مع القسمة الصحيحة"
+  ],
+  "examples": [
+   {
+    "args": [
+     [
+      450,
+      300,
+      1200
+     ],
+     2000,
+     10
+    ],
+    "expected": 1950
+   },
+   {
+    "args": [
+     [
+      500,
+      500
+     ],
+     1000,
+     10
+    ],
+    "expected": 900
+   }
+  ],
+  "functionName": "marketTotal",
+  "starter": {
+   "javascript": "function marketTotal(prices, threshold, percent) {\n  // اكتب حلّك هنا\n}\n",
+   "python": "def marketTotal(prices, threshold, percent):\n    # اكتب حلّك هنا\n    pass\n"
+  },
+  "tests": [
+   {
+    "args": [
+     [
+      450,
+      300,
+      1200
+     ],
+     2000,
+     10
+    ],
+    "expected": 1950,
+    "hidden": false
+   },
+   {
+    "args": [
+     [
+      500,
+      500
+     ],
+     1000,
+     10
+    ],
+    "expected": 900,
+    "hidden": false
+   },
+   {
+    "args": [
+     [
+      250,
+      150
+     ],
+     1000,
+     10
+    ],
+    "expected": 400,
+    "hidden": true
+   },
+   {
+    "args": [
+     [
+      999
+     ],
+     1000,
+     50
+    ],
+    "expected": 999,
+    "hidden": true
+   },
+   {
+    "args": [
+     [
+      1999,
+      1
+     ],
+     2000,
+     15
+    ],
+    "expected": 1700,
+    "hidden": true
+   },
+   {
+    "args": [
+     [],
+     100,
+     10
+    ],
+    "expected": 0,
+    "hidden": true
+   }
+  ],
+  "hint": "استخدم القسمة الصحيحة: // في بايثون، وMath.floor في جافاسكربت.",
+  "tags": [
+   "قوائم",
+   "حساب"
+  ],
+  "reference_python": "def marketTotal(prices,threshold,percent):\n    total=sum(prices)\n    if total>=threshold:return total*(100-percent)//100\n    return total\n"
+ },
+ {
+  "slug": "cashier-coins",
+  "title": "الصرّاف",
+  "topic": "مال",
+  "level": "easy",
+  "points": 10,
+  "story": "أنت صرّاف في دكان وتريد إرجاع الباقي بأقل عدد ممكن من القطع المعدنية.",
+  "task": "اكتب دالة coinChange(amount) تعيد مصفوفة بعدد القطع من كل فئة بهذا الترتيب: [100, 50, 20, 10, 5, 2, 1] دينار، بحيث يكون مجموع القطع أقل ما يمكن.",
+  "input_desc": "amount عدد صحيح من 0 إلى 100000.",
+  "output_desc": "مصفوفة من 7 أعداد صحيحة.",
+  "constraints": [
+   "الفئات المتاحة هي المذكورة فقط، وبلا حدّ لعدد القطع"
+  ],
+  "examples": [
+   {
+    "args": [
+     187
+    ],
+    "expected": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     0
+    ]
+   },
+   {
+    "args": [
+     0
+    ],
+    "expected": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "functionName": "coinChange",
+  "starter": {
+   "javascript": "function coinChange(amount) {\n  // اكتب حلّك هنا\n}\n",
+   "python": "def coinChange(amount):\n    # اكتب حلّك هنا\n    pass\n"
+  },
+  "tests": [
+   {
+    "args": [
+     187
+    ],
+    "expected": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     0
+    ],
+    "hidden": false
+   },
+   {
+    "args": [
+     0
+    ],
+    "expected": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "hidden": false
+   },
+   {
+    "args": [
+     99
+    ],
+    "expected": [
+     0,
+     1,
+     2,
+     0,
+     1,
+     2,
+     0
+    ],
+    "hidden": true
+   },
+   {
+    "args": [
+     1000
+    ],
+    "expected": [
+     10,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "hidden": true
+   },
+   {
+    "args": [
+     8
+    ],
+    "expected": [
+     0,
+     0,
+     0,
+     0,
+     1,
+     1,
+     1
+    ],
+    "hidden": true
+   },
+   {
+    "args": [
+     250
+    ],
+    "expected": [
+     2,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "hidden": true
+   }
+  ],
+  "hint": "ابدأ بأكبر فئة، وخذ أكبر عدد ممكن منها، ثم انتقل لما تبقّى.",
+  "tags": [
+   "حلقات",
+   "حساب"
+  ],
+  "reference_python": "def coinChange(amount):\n    out=[]\n    for c in [100,50,20,10,5,2,1]:\n        out.append(amount//c);amount%=c\n    return out\n"
+ },
+ {
+  "slug": "time-diff",
+  "title": "الفرق بين وقتين",
+  "topic": "وقت",
+  "level": "easy",
+  "points": 10,
+  "story": "تريد معرفة المدة بين موعد خروجك وموعد وصولك، وقد تعبر منتصف الليل.",
+  "task": "اكتب دالة timeDiff(a, b) تعيد عدد الدقائق من الوقت a إلى الوقت b سائرًا إلى الأمام في الزمن. إن تساوى الوقتان فالناتج 0.",
+  "input_desc": "a وb نصّان بصيغة HH:MM (24 ساعة).",
+  "output_desc": "عدد صحيح بين 0 و1439.",
+  "constraints": [
+   "الفرق يكون دائمًا موجبًا أو صفرًا"
+  ],
+  "examples": [
+   {
+    "args": [
+     "05:30",
+     "06:15"
+    ],
+    "expected": 45
+   },
+   {
+    "args": [
+     "23:50",
+     "00:10"
+    ],
+    "expected": 20
+   }
+  ],
+  "functionName": "timeDiff",
+  "starter": {
+   "javascript": "function timeDiff(a, b) {\n  // اكتب حلّك هنا\n}\n",
+   "python": "def timeDiff(a, b):\n    # اكتب حلّك هنا\n    pass\n"
+  },
+  "tests": [
+   {
+    "args": [
+     "05:30",
+     "06:15"
+    ],
+    "expected": 45,
+    "hidden": false
+   },
+   {
+    "args": [
+     "23:50",
+     "00:10"
+    ],
+    "expected": 20,
+    "hidden": false
+   },
+   {
+    "args": [
+     "12:00",
+     "12:00"
+    ],
+    "expected": 0,
+    "hidden": true
+   },
+   {
+    "args": [
+     "18:45",
+     "04:15"
+    ],
+    "expected": 570,
+    "hidden": true
+   },
+   {
+    "args": [
+     "00:00",
+     "23:59"
+    ],
+    "expected": 1439,
+    "hidden": true
+   }
+  ],
+  "hint": "إن كان b أقل من a فأضف 1440 دقيقة.",
+  "tags": [
+   "وقت",
+   "نصوص"
+  ],
+  "reference_python": "def timeDiff(a,b):\n    m=lambda s:int(s[:2])*60+int(s[3:])\n    return (m(b)-m(a))%1440\n"
+ },
+ {
+  "slug": "attendance",
+  "title": "كشف الحضور",
+  "topic": "كشافة",
+  "level": "easy",
+  "points": 10,
+  "story": "قائد الفوج الكشفي يريد معرفة الغائبين عن اللقاء الأسبوعي.",
+  "task": "اكتب دالة absentees(everyone, present) تعيد قائمة أسماء الغائبين (الموجودين في everyone وغير الموجودين في present) مرتّبة ترتيبًا أبجديًا.",
+  "input_desc": "قائمتان من الأسماء؛ أسماء everyone لا تتكرر، وقد تحوي present أسماء ليست في everyone.",
+  "output_desc": "قائمة نصوص مرتبة.",
+  "constraints": [
+   "تجاهل الأسماء الزائدة في present"
+  ],
+  "examples": [
+   {
+    "args": [
+     [
+      "أحمد",
+      "سمير",
+      "ليلى"
+     ],
+     [
+      "سمير"
+     ]
+    ],
+    "expected": [
+     "أحمد",
+     "ليلى"
+    ]
+   },
+   {
+    "args": [
+     [
+      "علي",
+      "نور"
+     ],
+     [
+      "علي",
+      "نور"
+     ]
+    ],
+    "expected": []
+   }
+  ],
+  "functionName": "absentees",
+  "starter": {
+   "javascript": "function absentees(everyone, present) {\n  // اكتب حلّك هنا\n}\n",
+   "python": "def absentees(everyone, present):\n    # اكتب حلّك هنا\n    pass\n"
+  },
+  "tests": [
+   {
+    "args": [
+     [
+      "أحمد",
+      "سمير",
+      "ليلى"
+     ],
+     [
+      "سمير"
+     ]
+    ],
+    "expected": [
+     "أحمد",
+     "ليلى"
+    ],
+    "hidden": false
+   },
+   {
+    "args": [
+     [
+      "علي",
+      "نور"
+     ],
+     [
+      "علي",
+      "نور"
+     ]
+    ],
+    "expected": [],
+    "hidden": false
+   },
+   {
+    "args": [
+     [
+      "هدى",
+      "يوسف"
+     ],
+     []
+    ],
+    "expected": [
+     "هدى",
+     "يوسف"
+    ],
+    "hidden": true
+   },
+   {
+    "args": [
+     [
+      "رضا"
+     ],
+     [
+      "رضا",
+      "زائر"
+     ]
+    ],
+    "expected": [],
+    "hidden": true
+   },
+   {
+    "args": [
+     [],
+     [
+      "أحد"
+     ]
+    ],
+    "expected": [],
+    "hidden": true
+   }
+  ],
+  "hint": "اختر الأسماء التي ليست في present ثم رتّب.",
+  "tags": [
+   "قوائم",
+   "ترتيب"
+  ],
+  "reference_python": "def absentees(everyone,present):\n    return sorted(n for n in everyone if n not in present)\n"
+ },
+ {
+  "slug": "plate-wilaya",
+  "title": "لوحة التسجيل",
+  "topic": "نقل",
+  "level": "easy",
+  "points": 10,
+  "story": "تقرأ لوحة تسجيل سيارة وتريد معرفة ولايتها من آخر رقم فيها.",
+  "task": "اكتب دالة wilayaOfPlate(plate, table) تعيد اسم الولاية. رمز الولاية هو آخر مقطع من اللوحة (مفصول بمسافة). إن لم يوجد الرمز في table فأعد «غير معروف».",
+  "input_desc": "plate نص مثل «01234 118 39»، وtable قاموس من رمز (نص) إلى اسم.",
+  "output_desc": "نص.",
+  "constraints": [],
+  "examples": [
+   {
+    "args": [
+     "01234 118 39",
+     {
+      "39": "الوادي",
+      "57": "المغير",
+      "16": "الجزائر",
+      "31": "وهران",
+      "07": "بسكرة"
+     }
+    ],
+    "expected": "الوادي"
+   },
+   {
+    "args": [
+     "56789 110 57",
+     {
+      "39": "الوادي",
+      "57": "المغير",
+      "16": "الجزائر",
+      "31": "وهران",
+      "07": "بسكرة"
+     }
+    ],
+    "expected": "المغير"
+   }
+  ],
+  "functionName": "wilayaOfPlate",
+  "starter": {
+   "javascript": "function wilayaOfPlate(plate, table) {\n  // اكتب حلّك هنا\n}\n",
+   "python": "def wilayaOfPlate(plate, table):\n    # اكتب حلّك هنا\n    pass\n"
+  },
+  "tests": [
+   {
+    "args": [
+     "01234 118 39",
+     {
+      "39": "الوادي",
+      "57": "المغير",
+      "16": "الجزائر",
+      "31": "وهران",
+      "07": "بسكرة"
+     }
+    ],
+    "expected": "الوادي",
+    "hidden": false
+   },
+   {
+    "args": [
+     "56789 110 57",
+     {
+      "39": "الوادي",
+      "57": "المغير",
+      "16": "الجزائر",
+      "31": "وهران",
+      "07": "بسكرة"
+     }
+    ],
+    "expected": "المغير",
+    "hidden": false
+   },
+   {
+    "args": [
+     "11111 100 99",
+     {
+      "39": "الوادي",
+      "57": "المغير",
+      "16": "الجزائر",
+      "31": "وهران",
+      "07": "بسكرة"
+     }
+    ],
+    "expected": "غير معروف",
+    "hidden": true
+   },
+   {
+    "args": [
+     "22222 105 07",
+     {
+      "39": "الوادي",
+      "57": "المغير",
+      "16": "الجزائر",
+      "31": "وهران",
+      "07": "بسكرة"
+     }
+    ],
+    "expected": "بسكرة",
+    "hidden": true
+   },
+   {
+    "args": [
+     "33333 120 16",
+     {
+      "39": "الوادي",
+      "57": "المغير",
+      "16": "الجزائر",
+      "31": "وهران",
+      "07": "بسكرة"
+     }
+    ],
+    "expected": "الجزائر",
+    "hidden": true
+   }
+  ],
+  "hint": "قسّم النص على المسافات وخذ آخر عنصر.",
+  "tags": [
+   "نصوص",
+   "قواميس"
+  ],
+  "reference_python": "def wilayaOfPlate(plate,table):\n    return table.get(plate.split(\" \")[-1],\"غير معروف\")\n"
+ },
+ {
+  "slug": "scout-patrols",
+  "title": "تقسيم الطلائع",
+  "topic": "كشافة",
+  "level": "easy",
+  "points": 10,
+  "story": "تريد تقسيم الكشافين إلى طلائع متقاربة العدد بالتناوب حسب ترتيب القائمة.",
+  "task": "اكتب دالة splitPatrols(names, k) تعيد k قوائم: الاسم الأول للطليعة الأولى والثاني للثانية… وبعد الطليعة k تعود للأولى.",
+  "input_desc": "names قائمة أسماء (قد تكون فارغة)، وk عدد صحيح من 1 إلى 20.",
+  "output_desc": "قائمة من k قوائم.",
+  "constraints": [
+   "تُعاد k قوائم دائمًا حتى لو كان بعضها فارغًا"
+  ],
+  "examples": [
+   {
+    "args": [
+     [
+      "أ",
+      "ب",
+      "ج",
+      "د",
+      "هـ"
+     ],
+     2
+    ],
+    "expected": [
+     [
+      "أ",
+      "ج",
+      "هـ"
+     ],
+     [
+      "ب",
+      "د"
+     ]
+    ]
+   },
+   {
+    "args": [
+     [
+      "أ",
+      "ب"
+     ],
+     1
+    ],
+    "expected": [
+     [
+      "أ",
+      "ب"
+     ]
+    ]
+   }
+  ],
+  "functionName": "splitPatrols",
+  "starter": {
+   "javascript": "function splitPatrols(names, k) {\n  // اكتب حلّك هنا\n}\n",
+   "python": "def splitPatrols(names, k):\n    # اكتب حلّك هنا\n    pass\n"
+  },
+  "tests": [
+   {
+    "args": [
+     [
+      "أ",
+      "ب",
+      "ج",
+      "د",
+      "هـ"
+     ],
+     2
+    ],
+    "expected": [
+     [
+      "أ",
+      "ج",
+      "هـ"
+     ],
+     [
+      "ب",
+      "د"
+     ]
+    ],
+    "hidden": false
+   },
+   {
+    "args": [
+     [
+      "أ",
+      "ب"
+     ],
+     1
+    ],
+    "expected": [
+     [
+      "أ",
+      "ب"
+     ]
+    ],
+    "hidden": false
+   },
+   {
+    "args": [
+     [
+      "أ"
+     ],
+     3
+    ],
+    "expected": [
+     [
+      "أ"
+     ],
+     [],
+     []
+    ],
+    "hidden": true
+   },
+   {
+    "args": [
+     [],
+     2
+    ],
+    "expected": [
+     [],
+     []
+    ],
+    "hidden": true
+   },
+   {
+    "args": [
+     [
+      "س",
+      "ص",
+      "ع",
+      "ف",
+      "ق",
+      "ك",
+      "ل"
+     ],
+     3
+    ],
+    "expected": [
+     [
+      "س",
+      "ف",
+      "ل"
+     ],
+     [
+      "ص",
+      "ق"
+     ],
+     [
+      "ع",
+      "ك"
+     ]
+    ],
+    "hidden": true
+   }
+  ],
+  "hint": "استخدم باقي القسمة على k لتحديد الطليعة.",
+  "tags": [
+   "قوائم",
+   "حلقات"
+  ],
+  "reference_python": "def splitPatrols(names,k):\n    out=[[] for _ in range(k)]\n    for i,n in enumerate(names):out[i%k].append(n)\n    return out\n"
+ },
+ {
+  "slug": "semester-note",
+  "title": "ملاحظة الفصل",
+  "topic": "مدرسة",
+  "level": "medium",
+  "points": 25,
+  "story": "تريد معرفة ملاحظتك في الفصل من علاماتك ومعاملات المواد.",

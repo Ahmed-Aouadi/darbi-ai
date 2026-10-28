@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowUpLeft, Award, BookOpen, Check, ChevronDown, Clock3, Code2, Flame, Menu, Play, Search, Sparkles, Trophy, Users, Zap } from 'lucide-react';
 import styles from './page.module.css';
 import challengeData from '../content/challenges.json';
+import Wave1Panel from './wave1-panel';
+import AuthPanel from './auth-panel';
 
 const challenges = challengeData.map((challenge, index) => ({
   id: index + 1,
@@ -17,6 +19,8 @@ const challenges = challengeData.map((challenge, index) => ({
   desc: challenge.story,
 }));
 
+const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\\u064B-\\u065F\\u0670]/g, '').replace(/\\u0640/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').toLowerCase();
+
 const starter = challengeData[0].starter.javascript;
 
 export default function Home() {
@@ -27,7 +31,7 @@ export default function Home() {
   const [solved, setSolved] = useState(false);
   const [runMessage, setRunMessage] = useState('');
   const [mobileMenu, setMobileMenu] = useState(false);
-  const filtered = useMemo(() => challenges.filter(c => (tab === 'الكل' || c.topic === tab) && (c.title + c.desc + c.topic).includes(search)), [tab, search]);
+  const filtered = useMemo(() => challenges.filter(c => (tab === 'الكل' || c.topic === tab) && normalizeSearch(c.title + c.desc + c.topic).includes(normalizeSearch(search))), [tab, search]);
   const runCode = () => {
     setRan(false);
     setSolved(false);
@@ -87,7 +91,7 @@ export default function Home() {
       <nav className={mobileMenu ? styles.navOpen : styles.nav}>
         <a className={styles.activeNav} href="#challenges">التحديات</a><a href="#how">كيف تعمل؟</a><a href="#league">دوري الأسبوع</a>
       </nav>
-      <div className={styles.topActions}><button className={styles.login} onClick={() => alert('تسجيل الحساب سيكون متاحًا في المرحلة الثانية.')}>دخول</button><a className={styles.startBtn} href="#try">جرّب مجانًا <ArrowLeft size={16}/></a></div>
+      <div className={styles.topActions}><AuthPanel /><a className={styles.startBtn} href="#try">جرّب مجانًا <ArrowLeft size={16}/></a></div>
       <button className={styles.menuBtn} onClick={() => setMobileMenu(!mobileMenu)} aria-label="فتح القائمة"><Menu/></button>
     </header>
 
@@ -102,7 +106,7 @@ export default function Home() {
       <div className={styles.heroVisual}>
         <div className={styles.decorCircle}/><div className={styles.codeCard}>
           <div className={styles.codeTop}><span className={styles.windowDots}><i/><i/><i/></span><span>challenge.js</span><span className={styles.jsBadge}>JS</span></div>
-          <div className={styles.codeBody}><div><span className={styles.lineNo}>01</span><span className={styles.codePurple}>function</span> <span className={styles.codeBlue}>nextBus</span>(now, times) {'{'}</div><div><span className={styles.lineNo}>02</span> &nbsp;<span className={styles.codeGray}>// وقتاش تجي الحافلة؟</span></div><div><span className={styles.lineNo}>03</span> &nbsp;<span className={styles.codePurple}>return</span> findNearest(now, times);</div><div><span className={styles.lineNo}>04</span>{'}'}</div></div>
+          <div className={styles.codeBody}><div><span className={styles.lineNo}>01</span><span className={styles.codePurple}>function</span> <span className={styles.codeBlue}>nextBus</span>(now, times) {'{'}</div><div><span className={styles.lineNo}>02</span> &nbsp;<span className={styles.codeGray}>{/* وقتاش تجي الحافلة؟ */}</span></div><div><span className={styles.lineNo}>03</span> &nbsp;<span className={styles.codePurple}>return</span> findNearest(now, times);</div><div><span className={styles.lineNo}>04</span>{'}'}</div></div>
           <div className={styles.passCard}><span><Check size={16}/></span><div><b>اختبار ناجح!</b><small>الانتظار: ٥٥ دقيقة</small></div><strong>+١٠ XP</strong></div>
         </div>
         <div className={styles.floatTag}><span>🚌</span><div><b>أقرب حافلة</b><small>تحدّي الأسبوع</small></div><span className={styles.tagArrow}><ArrowUpLeft size={16}/></span></div>
@@ -111,13 +115,15 @@ export default function Home() {
     </section>
 
     <section className={styles.statsStrip}>
-      <div><span className={styles.statIcon}><Code2/></span><p><b>15+</b><small>تحديًا من واقعنا</small></p></div><div><span className={styles.statIcon}><Users/></span><p><b>دوري الأصدقاء</b><small>نافس جماعتك كل أسبوع</small></p></div><div><span className={styles.statIcon}><Flame/></span><p><b>خطوة بخطوة</b><small>من أول سطر حتى الاحتراف</small></p></div><div><span className={styles.statIcon}><Trophy/></span><p><b>اجمع النقاط</b><small>وافتح شارات جديدة</small></p></div>
+      <div><span className={styles.statIcon}><Code2/></span><p><b>{challenges.length}+</b><small>تحديًا من واقعنا</small></p></div><div><span className={styles.statIcon}><Users/></span><p><b>دوري الأصدقاء</b><small>نافس جماعتك كل أسبوع</small></p></div><div><span className={styles.statIcon}><Flame/></span><p><b>خطوة بخطوة</b><small>من أول سطر حتى الاحتراف</small></p></div><div><span className={styles.statIcon}><Trophy/></span><p><b>اجمع النقاط</b><small>وافتح شارات جديدة</small></p></div>
     </section>
+
+    <Wave1Panel />
 
     <section className={styles.trySection} id="try">
       <div className={styles.sectionIntro}><div><span className={styles.kicker}>جرّب بنفسك</span><h2>أول تحدٍّ في أقل من دقيقتين</h2><p>ما تحتاجش حساب. عدّل الدالة واضغط شغّل باش تجرب.</p></div><span className={styles.challengeNumber}>التحدّي 01 <b>من {challenges.length}</b></span></div>
       <div className={styles.tryGrid}>
-        <article className={styles.problemPanel}><div className={styles.panelLabel}><span>🚌</span><span>النقل</span><span className={styles.levelEasy}>سهل · 10 نقاط</span></div><h3>أقرب حافلة</h3><p>راك تستنّى الحافلة في محطة وسط المدينة. عندك جدول المواعيد وحاب تعرف أقرب حافلة ووقتاش توصل.</p><div className={styles.taskBox}><b>المطلوب</b><p>اكتب دالة <code>nextBus(now, times)</code> ترجع موعد الحافلة القادمة وعدد دقائق الانتظار.</p></div><div className={styles.exampleBox}><div><span>المدخل</span><code>"08:20", ["06:30", "09:15"]</code></div><ArrowLeft size={17}/><div><span>الناتج المتوقع</span><code>["09:15", 55]</code></div></div><div className={styles.tip}><Sparkles size={17}/><span><b>تلميح:</b> حوّل الوقت إلى دقائق منذ منتصف الليل لتسهّل المقارنة.</span></div></article>
+        <article className={styles.problemPanel}><div className={styles.panelLabel}><span>🚌</span><span>النقل</span><span className={styles.levelEasy}>سهل · 10 نقاط</span></div><h3>أقرب حافلة</h3><p>راك تستنّى الحافلة في محطة وسط المدينة. عندك جدول المواعيد وحاب تعرف أقرب حافلة ووقتاش توصل.</p><div className={styles.taskBox}><b>المطلوب</b><p>اكتب دالة <code>nextBus(now, times)</code> ترجع موعد الحافلة القادمة وعدد دقائق الانتظار.</p></div><div className={styles.exampleBox}><div><span>المدخل</span><code>&quot;08:20&quot;, [&quot;06:30&quot;, &quot;09:15&quot;]</code></div><ArrowLeft size={17}/><div><span>الناتج المتوقع</span><code>[&quot;09:15&quot;, 55]</code></div></div><div className={styles.tip}><Sparkles size={17}/><span><b>تلميح:</b> حوّل الوقت إلى دقائق منذ منتصف الليل لتسهّل المقارنة.</span></div></article>
         <article className={styles.editorPanel}><div className={styles.editorHead}><div><span className={styles.editorDot}/><b>محرّر الكود</b></div><button className={styles.languageBtn}>JavaScript <ChevronDown size={14}/></button></div><div className={styles.editorWrap}><div className={styles.lineNums}>1<br/>2<br/>3<br/>4</div><textarea aria-label="محرر JavaScript" spellCheck={false} dir="ltr" value={code} onChange={e => {setCode(e.target.value);setRan(false);setSolved(false);setRunMessage('')}}/></div><div className={styles.editorFoot}><span><span className={styles.statusDot}/> JavaScript</span><span>تُحفظ مسودتك محليًا</span></div><div className={styles.runRow}><button className={styles.runBtn} onClick={runCode}><Play size={16} fill="currentColor"/> شغّل الاختبارات</button><span>⏱ 3 ثوانٍ كحد أقصى</span></div>{ran && <div className={solved ? styles.resultSuccess : styles.resultFail}><span>{solved ? <Check size={18}/> : <Clock3 size={18}/>}</span><div><b>{solved ? 'اجتزت الاختبار الظاهر!' : 'ما زال الحل يحتاج تعديلًا'}</b><p>{runMessage || (solved ? 'ممتاز! يمكنك الآن الانتقال إلى التحدّي التالي.' : 'غيّر الكود ثم جرّب مجددًا.')}</p></div></div>}</article>
       </div>
       <p className={styles.disclaimer}>التشغيل يختبر الأمثلة الظاهرة داخل عامل منفصل. لا تُرسل الاختبارات المخفية إلى المتصفح في وضع التجربة.</p>

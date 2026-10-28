@@ -7,14 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "validate:content": "node scripts/validate-challenges.mjs"
+    "validate:content": "node scripts/validate-challenges.mjs",
+    "test:wave1": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "next": "14.2.31",
     "react": "^18",
     "react-dom": "^18",
     "lucide-react": "^0.468.0",
-    "pdfjs-dist": "^4.10.38"
+    "pdfjs-dist": "^4.10.38",
+    "@supabase/supabase-js": "^2.57.0"
   },
   "devDependencies": {
     "@types/node": "^20",

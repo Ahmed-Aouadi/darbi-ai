@@ -1,0 +1,28 @@
+{
+ "أول سطر": [
+  "attendance",
+  "market-total",
+  "electricity-bill",
+  "cashier-coins",
+  "plate-wilaya",
+  "scout-patrols",
+  "semester-note",
+  "time-diff"
+ ],
+ "ألعب بالقوائم والنصوص": [
+  "darija-translate",
+  "bus-peak",
+  "teacher-conflicts",
+  "league-table",
+  "wedding-pots",
+  "irrigation-turn"
+ ],
+ "مسائل الحياة": [
+  "nearest-bus",
+  "taxi-fare",
+  "date-boxes",
+  "doctor-slots",
+  "water-schedule",
+  "shortest-route"
+ ]
+}

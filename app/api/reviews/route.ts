@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = await requireApiUser(request);
   if (!isApiAuth(auth)) return auth;
+  const { data: enabled, error: flagError } = await auth.userClient.rpc('is_feature_enabled', { p_key: 'ff_spaced_review', p_user_id: auth.user.id });
+  if (flagError || !enabled) return Response.json({ error: 'المراجعة المتباعدة غير مفعّلة لهذا الحساب.' }, { status: 404 });
   let body: any;
   try { body = await request.json(); } catch { return Response.json({ error: 'صيغة الطلب غير صالحة.' }, { status: 400 }); }
   if (typeof body?.challengeId !== 'string' || body.challengeId.length > 64 || typeof body?.passed !== 'boolean') {

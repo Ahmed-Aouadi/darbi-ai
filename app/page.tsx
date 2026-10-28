@@ -104,7 +104,7 @@ export default function Home() {
       <div className={styles.heroVisual}>
         <div className={styles.decorCircle}/><div className={styles.codeCard}>
           <div className={styles.codeTop}><span className={styles.windowDots}><i/><i/><i/></span><span>challenge.js</span><span className={styles.jsBadge}>JS</span></div>
-          <div className={styles.codeBody}><div><span className={styles.lineNo}>01</span><span className={styles.codePurple}>function</span> <span className={styles.codeBlue}>nextBus</span>(now, times) {'{'}</div><div><span className={styles.lineNo}>02</span> &nbsp;<span className={styles.codeGray}>// وقتاش تجي الحافلة؟</span></div><div><span className={styles.lineNo}>03</span> &nbsp;<span className={styles.codePurple}>return</span> findNearest(now, times);</div><div><span className={styles.lineNo}>04</span>{'}'}</div></div>
+          <div className={styles.codeBody}><div><span className={styles.lineNo}>01</span><span className={styles.codePurple}>function</span> <span className={styles.codeBlue}>nextBus</span>(now, times) {'{'}</div><div><span className={styles.lineNo}>02</span> &nbsp;<span className={styles.codeGray}>{/* وقتاش تجي الحافلة؟ */}</span></div><div><span className={styles.lineNo}>03</span> &nbsp;<span className={styles.codePurple}>return</span> findNearest(now, times);</div><div><span className={styles.lineNo}>04</span>{'}'}</div></div>
           <div className={styles.passCard}><span><Check size={16}/></span><div><b>اختبار ناجح!</b><small>الانتظار: ٥٥ دقيقة</small></div><strong>+١٠ XP</strong></div>
         </div>
         <div className={styles.floatTag}><span>🚌</span><div><b>أقرب حافلة</b><small>تحدّي الأسبوع</small></div><span className={styles.tagArrow}><ArrowUpLeft size={16}/></span></div>

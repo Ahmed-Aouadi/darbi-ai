@@ -142,7 +142,8 @@ export default function Wave1Panel() {
       <article className={styles.card}>
         <div className={styles.cardTitle}><Target /><h3>خطة اليوم</h3></div>
         {questTemplates.map(q => <div className={styles.quest} key={q.id}><div><b>{q.title}</b><small>المكافأة: {q.reward} جواهر</small></div><button onClick={() => claimQuest(q.id, q.reward)} disabled={state.questClaims.includes(q.id)}>{state.questClaims.includes(q.id) ? 'تم الاستلام' : 'استلام'}</button></div>)}
-        <p className={styles.smallNote}>المهام والمكافآت محفوظة على هذا الجهاز فقط في هذه النسخة.</p>
+        {session && <div className={styles.serverBlock}><b>مهام الحساب</b>{serverQuests.length ? serverQuests.map(item => { const quest = Array.isArray(item.quests) ? item.quests[0] : item.quests; return <div className={styles.quest} key={item.quest_id}><div><b>{quest?.title || quest?.key || 'مهمة'}</b><small>{item.progress}/{quest?.target || 1} · {quest?.reward || 0} جواهر</small></div><button onClick={() => claimServerQuest(item.quest_id)} disabled={item.claimed || item.progress < (quest?.target || 1)}>{item.claimed ? 'تم الاستلام' : 'استلام'}</button></div>; }) : <small>لا توجد مهام مكتملة بعد أو تعذّر تحميلها.</small>}<small>{serverStatus} · {Object.values(serverFlags).filter(Boolean).length} مزايا مفعّلة</small></div>}
+        <p className={styles.smallNote}>المهام أعلاه تجريبية محلية؛ مهام الحساب لا تُمنح إلا بعد تسجيل تقدّم موثّق على الخادم.</p>
       </article>
       <article className={styles.card}>
         <div className={styles.cardTitle}><BookOpen /><h3>خريطة المهارات والمراجعة</h3></div>

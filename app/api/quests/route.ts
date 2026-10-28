@@ -9,11 +9,16 @@ export async function GET(request: NextRequest) {
   const { error: assignError } = await auth.userClient.rpc('ensure_daily_quests');
   if (assignError) return Response.json({ error: 'تعذّر تحميل مهام اليوم.' }, { status: 500 });
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Algiers', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const [year, month, date] = day.split('-').map(Number);
+  const weekStartDate = new Date(Date.UTC(year, month - 1, date));
+  const daysSinceMonday = (weekStartDate.getUTCDay() + 6) % 7;
+  weekStartDate.setUTCDate(weekStartDate.getUTCDate() - daysSinceMonday);
+  const weekStart = weekStartDate.toISOString().slice(0, 10);
   const { data, error } = await auth.admin
     .from('user_quests')
     .select('quest_id,day,progress,claimed,claimed_at,quests(id,key,kind,title,target,reward,metric)')
     .eq('user_id', auth.user.id)
-    .in('day', [day]);
+    .in('day', [day, weekStart]);
   if (error) return Response.json({ error: 'تعذّر قراءة مهامك.' }, { status: 500 });
   return Response.json({ day, quests: data || [] }, { headers: { 'Cache-Control': 'private, no-store' } });
 }

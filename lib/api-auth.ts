@@ -21,7 +21,11 @@ export async function requireApiUser(request: NextRequest): Promise<ApiAuth | Re
   const { data, error } = await authClient.auth.getUser(token);
   if (error || !data.user) return Response.json({ error: 'جلسة غير صالحة أو منتهية.' }, { status: 401 });
 
-  const userClient = createClient(url, anonKey, {\n    global: { headers: { Authorization: `Bearer ${token}` } },\n    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },\n  });\n  const admin = createClient(url, serviceKey, {
+  const userClient = createClient(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const admin = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
   return { user: data.user, admin, userClient };

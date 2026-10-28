@@ -11,11 +11,15 @@ export async function POST(request: NextRequest) {
   if (typeof body?.challengeId !== 'string' || body.challengeId.length > 64) {
     return Response.json({ error: 'معرّف التحدي غير صالح.' }, { status: 400 });
   }
-  const { data: enabled, error: flagError } = await auth.userClient.rpc('is_feature_enabled', {
+  // These migration-defined RPCs are not yet represented in the generated Supabase Database type.
+  const editorialClient = auth.userClient as unknown as {
+    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
+  const { data: enabled, error: flagError } = await editorialClient.rpc('is_feature_enabled', {
     p_key: 'ff_editorial', p_user_id: auth.user.id,
   });
-  if (flagError || !enabled) return Response.json({ error: 'الشرح التحريري غير متاح حاليًا.' }, { status: 404 });
-  const { error } = await auth.userClient.rpc('record_editorial_read', { p_challenge_id: body.challengeId });
+  if (flagError || enabled !== true) return Response.json({ error: 'الشرح التحريري غير متاح حاليًا.' }, { status: 404 });
+  const { error } = await editorialClient.rpc('record_editorial_read', { p_challenge_id: body.challengeId });
   if (error) return Response.json({ error: 'يجب اجتياز التحدي أولًا قبل تسجيل قراءة الشرح.' }, { status: 403 });
   return Response.json({ recorded: true }, { headers: { 'Cache-Control': 'private, no-store' } });
 }

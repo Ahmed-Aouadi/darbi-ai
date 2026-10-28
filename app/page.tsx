@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowUpLeft, Award, BookOpen, Check, ChevronDown, Clock3, Co
 import styles from './page.module.css';
 import challengeData from '../content/challenges.json';
 import Wave1Panel from './wave1-panel';
+import AuthPanel from './auth-panel';
 
 const challenges = challengeData.map((challenge, index) => ({
   id: index + 1,
@@ -88,7 +89,7 @@ export default function Home() {
       <nav className={mobileMenu ? styles.navOpen : styles.nav}>
         <a className={styles.activeNav} href="#challenges">التحديات</a><a href="#how">كيف تعمل؟</a><a href="#league">دوري الأسبوع</a>
       </nav>
-      <div className={styles.topActions}><button className={styles.login} onClick={() => alert('تسجيل الحساب سيكون متاحًا في المرحلة الثانية.')}>دخول</button><a className={styles.startBtn} href="#try">جرّب مجانًا <ArrowLeft size={16}/></a></div>
+      <div className={styles.topActions}><span className={styles.login}><AuthPanel /></span><a className={styles.startBtn} href="#try">جرّب مجانًا <ArrowLeft size={16}/></a></div>
       <button className={styles.menuBtn} onClick={() => setMobileMenu(!mobileMenu)} aria-label="فتح القائمة"><Menu/></button>
     </header>
 

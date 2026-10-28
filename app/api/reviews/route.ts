@@ -6,6 +6,8 @@ export const runtime = 'nodejs';
 export async function GET(request: NextRequest) {
   const auth = await requireApiUser(request);
   if (!isApiAuth(auth)) return auth;
+  const { data: enabled, error: flagError } = await auth.userClient.rpc('is_feature_enabled', { p_key: 'ff_spaced_review', p_user_id: auth.user.id });
+  if (flagError || !enabled) return Response.json({ error: 'المراجعة المتباعدة غير مفعّلة لهذا الحساب.' }, { status: 404 });
   const { data, error } = await auth.admin.from('review_queue')
     .select('challenge_id,due_on,stage,done,challenges(slug,title,topic,level)')
     .eq('user_id', auth.user.id)

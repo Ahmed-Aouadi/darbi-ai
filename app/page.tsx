@@ -3,17 +3,21 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowUpLeft, Award, BookOpen, Check, ChevronDown, Clock3, Code2, Flame, Menu, Play, Search, Sparkles, Trophy, Users, Zap } from 'lucide-react';
 import styles from './page.module.css';
+import challengeData from '../content/challenges.json';
 
-const challenges = [
-  { id: 1, slug: 'nearest-bus', title: 'أقرب حافلة', topic: 'النقل', level: 'سهل', points: 10, time: 'دقيقتان', icon: '🚌', desc: 'احسب أقرب موعد للحافلة ومدة الانتظار.' },
-  { id: 2, slug: 'market-basket', title: 'ميزان السوق', topic: 'السوق', level: 'سهل', points: 10, time: '3 دقائق', icon: '🧺', desc: 'اجمع ثمن المشتريات وطبّق الخصم المناسب.' },
-  { id: 3, slug: 'class-average', title: 'معدّل الفصل', topic: 'المدرسة', level: 'متوسط', points: 25, time: '5 دقائق', icon: '📚', desc: 'احسب المعدل الموزون حسب معاملات المواد.' },
-  { id: 4, slug: 'wedding-meal', title: 'قدر الوليمة', topic: 'الأعراس', level: 'متوسط', points: 25, time: '6 دقائق', icon: '🍲', desc: 'قدّر عدد القدور التي تكفي الضيوف.' },
-  { id: 5, slug: 'electricity-bill', title: 'فاتورة الكهرباء', topic: 'المنزل', level: 'سهل', points: 10, time: '4 دقائق', icon: '💡', desc: 'احسب الفاتورة وفق شرائح الاستهلاك.' },
-  { id: 6, slug: 'neighborhood-route', title: 'طريق الحي', topic: 'النقل', level: 'صعب', points: 50, time: '10 دقائق', icon: '🗺️', desc: 'ابحث عن أقصر طريق بين حيّين.' },
-];
+const challenges = challengeData.map((challenge, index) => ({
+  id: index + 1,
+  slug: challenge.slug,
+  title: challenge.title,
+  topic: challenge.topic,
+  level: ({ easy: 'سهل', medium: 'متوسط', hard: 'صعب' } as const)[challenge.level as 'easy' | 'medium' | 'hard'],
+  points: challenge.points,
+  time: challenge.level === 'easy' ? '3 دقائق' : challenge.level === 'medium' ? '5 دقائق' : '8 دقائق',
+  icon: ({ 'نقل': '🚌', 'سوق': '🧺', 'مال': '💰', 'مدرسة': '📚', 'كشافة': '🏕️', 'وقت': '⏱️', 'منزل': '🏠' } as Record<string, string>)[challenge.topic] || '💡',
+  desc: challenge.story,
+}));
 
-const starter = 'function nextBus(now, times) {\n  // اكتب حلّك هنا\n  return ["09:15", 55];\n}';
+const starter = challengeData[0].starter.javascript;
 
 export default function Home() {
   const [tab, setTab] = useState('الكل');
@@ -21,14 +25,60 @@ export default function Home() {
   const [code, setCode] = useState(starter);
   const [ran, setRan] = useState(false);
   const [solved, setSolved] = useState(false);
+  const [runMessage, setRunMessage] = useState('');
   const [mobileMenu, setMobileMenu] = useState(false);
   const filtered = useMemo(() => challenges.filter(c => (tab === 'الكل' || c.topic === tab) && (c.title + c.desc + c.topic).includes(search)), [tab, search]);
   const runCode = () => {
-    setRan(true);
-    const hasFunction = /function\s+nextBus\s*\(/.test(code);
-    const hasReturn = /return\s*\[/.test(code);
-    const looksStarter = code.includes('// اكتب حلّك هنا');
-    setSolved(hasFunction && hasReturn && !looksStarter);
+    setRan(false);
+    setSolved(false);
+    setRunMessage('');
+    const visibleTests = challengeData[0].tests.filter(test => !test.hidden);
+    const workerSource = `
+      self.onmessage = ({ data }) => {
+        const { code, fnName, tests } = data;
+        try {
+          const fn = new Function(code + "\\n; return typeof " + fnName + " === 'function' ? " + fnName + " : null;")();
+          if (typeof fn !== 'function') throw new Error('لم أجد دالة باسم ' + fnName);
+          const equal = (a, b) => {
+            if (Object.is(a, b)) return true;
+            if (typeof a !== typeof b || a === null || b === null) return false;
+            if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => equal(v, b[i]));
+            if (typeof a === 'object') {
+              const ak = Object.keys(a).sort(), bk = Object.keys(b).sort();
+              return ak.length === bk.length && ak.every((k, i) => k === bk[i] && equal(a[k], b[k]));
+            }
+            return false;
+          };
+          self.postMessage({ results: tests.map(test => {
+            const actual = fn(...structuredClone(test.args));
+            return { ok: equal(actual, test.expected), actual };
+          }) });
+        } catch (error) {
+          self.postMessage({ error: String(error && error.message || error) });
+        }
+      };
+    `;
+    const blobUrl = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
+    const worker = new Worker(blobUrl);
+    const timeout = window.setTimeout(() => {
+      worker.terminate(); URL.revokeObjectURL(blobUrl);
+      setRan(true); setRunMessage('انتهت مهلة التشغيل (3 ثوانٍ). جرّب حلًا أسرع.');
+    }, 3000);
+    worker.onmessage = event => {
+      window.clearTimeout(timeout); worker.terminate(); URL.revokeObjectURL(blobUrl);
+      setRan(true);
+      if (event.data.error) { setSolved(false); setRunMessage('خطأ في الحل: ' + event.data.error); return; }
+      const passed = event.data.results.filter((result: { ok: boolean }) => result.ok).length;
+      setSolved(passed === visibleTests.length);
+      setRunMessage(passed === visibleTests.length
+        ? `نجحت في ${passed} من ${visibleTests.length} اختبار ظاهر.`
+        : `اجتزت ${passed} من ${visibleTests.length} اختبارات ظاهرة. راجع الحل وحاول مجددًا.`);
+    };
+    worker.onerror = () => {
+      window.clearTimeout(timeout); worker.terminate(); URL.revokeObjectURL(blobUrl);
+      setRan(true); setRunMessage('تعذّر تشغيل الكود. تحقق من صياغته ثم أعد المحاولة.');
+    };
+    worker.postMessage({ code, fnName: challengeData[0].functionName, tests: visibleTests });
   };
 
   return <main className={styles.app}>
@@ -65,16 +115,16 @@ export default function Home() {
     </section>
 
     <section className={styles.trySection} id="try">
-      <div className={styles.sectionIntro}><div><span className={styles.kicker}>جرّب بنفسك</span><h2>أول تحدٍّ في أقل من دقيقتين</h2><p>ما تحتاجش حساب. عدّل الدالة واضغط شغّل باش تجرب.</p></div><span className={styles.challengeNumber}>التحدّي 01 <b>من 15</b></span></div>
+      <div className={styles.sectionIntro}><div><span className={styles.kicker}>جرّب بنفسك</span><h2>أول تحدٍّ في أقل من دقيقتين</h2><p>ما تحتاجش حساب. عدّل الدالة واضغط شغّل باش تجرب.</p></div><span className={styles.challengeNumber}>التحدّي 01 <b>من {challenges.length}</b></span></div>
       <div className={styles.tryGrid}>
         <article className={styles.problemPanel}><div className={styles.panelLabel}><span>🚌</span><span>النقل</span><span className={styles.levelEasy}>سهل · 10 نقاط</span></div><h3>أقرب حافلة</h3><p>راك تستنّى الحافلة في محطة وسط المدينة. عندك جدول المواعيد وحاب تعرف أقرب حافلة ووقتاش توصل.</p><div className={styles.taskBox}><b>المطلوب</b><p>اكتب دالة <code>nextBus(now, times)</code> ترجع موعد الحافلة القادمة وعدد دقائق الانتظار.</p></div><div className={styles.exampleBox}><div><span>المدخل</span><code>"08:20", ["06:30", "09:15"]</code></div><ArrowLeft size={17}/><div><span>الناتج المتوقع</span><code>["09:15", 55]</code></div></div><div className={styles.tip}><Sparkles size={17}/><span><b>تلميح:</b> حوّل الوقت إلى دقائق منذ منتصف الليل لتسهّل المقارنة.</span></div></article>
-        <article className={styles.editorPanel}><div className={styles.editorHead}><div><span className={styles.editorDot}/><b>محرّر الكود</b></div><button className={styles.languageBtn}>JavaScript <ChevronDown size={14}/></button></div><div className={styles.editorWrap}><div className={styles.lineNums}>1<br/>2<br/>3<br/>4</div><textarea aria-label="محرر JavaScript" spellCheck={false} dir="ltr" value={code} onChange={e => {setCode(e.target.value);setRan(false);setSolved(false)}}/></div><div className={styles.editorFoot}><span><span className={styles.statusDot}/> JavaScript</span><span>تُحفظ مسودتك محليًا</span></div><div className={styles.runRow}><button className={styles.runBtn} onClick={runCode}><Play size={16} fill="currentColor"/> شغّل الاختبارات</button><span>⏱ 3 ثوانٍ كحد أقصى</span></div>{ran && <div className={solved ? styles.resultSuccess : styles.resultFail}><span>{solved ? <Check size={18}/> : <Clock3 size={18}/>}</span><div><b>{solved ? 'اجتزت الاختبار الظاهر!' : 'ما زال الحل يحتاج تعديلًا'}</b><p>{solved ? 'ممتاز! يمكنك الآن الانتقال إلى التحدّي التالي.' : 'تأكد من كتابة دالة nextBus وإرجاع مصفوفة. غيّر الكود ثم جرّب مجددًا.'}</p></div></div>}</article>
+        <article className={styles.editorPanel}><div className={styles.editorHead}><div><span className={styles.editorDot}/><b>محرّر الكود</b></div><button className={styles.languageBtn}>JavaScript <ChevronDown size={14}/></button></div><div className={styles.editorWrap}><div className={styles.lineNums}>1<br/>2<br/>3<br/>4</div><textarea aria-label="محرر JavaScript" spellCheck={false} dir="ltr" value={code} onChange={e => {setCode(e.target.value);setRan(false);setSolved(false);setRunMessage('')}}/></div><div className={styles.editorFoot}><span><span className={styles.statusDot}/> JavaScript</span><span>تُحفظ مسودتك محليًا</span></div><div className={styles.runRow}><button className={styles.runBtn} onClick={runCode}><Play size={16} fill="currentColor"/> شغّل الاختبارات</button><span>⏱ 3 ثوانٍ كحد أقصى</span></div>{ran && <div className={solved ? styles.resultSuccess : styles.resultFail}><span>{solved ? <Check size={18}/> : <Clock3 size={18}/>}</span><div><b>{solved ? 'اجتزت الاختبار الظاهر!' : 'ما زال الحل يحتاج تعديلًا'}</b><p>{runMessage || (solved ? 'ممتاز! يمكنك الآن الانتقال إلى التحدّي التالي.' : 'غيّر الكود ثم جرّب مجددًا.')}</p></div></div>}</article>
       </div>
-      <p className={styles.disclaimer}>نسخة تجريبية للواجهة — التصحيح هنا يفحص بنية الحل فقط، وسيُستبدل بمشغّل اختبارات معزول في استكمال المرحلة الأولى.</p>
+      <p className={styles.disclaimer}>التشغيل يختبر الأمثلة الظاهرة داخل عامل منفصل. لا تُرسل الاختبارات المخفية إلى المتصفح في وضع التجربة.</p>
     </section>
 
     <section className={styles.challengeSection} id="challenges"><div className={styles.sectionIntro}><div><span className={styles.kicker}>اختار مشكلتك</span><h2>تحديات تشبه حياتنا</h2><p>كل تحدٍّ حكاية من الواقع، وكل حلّ يقرّبك من مستوى جديد.</p></div><a href="#try" className={styles.textLink}>ابدأ من السهل <ArrowLeft size={16}/></a></div>
-      <div className={styles.filters}><div className={styles.searchBox}><Search size={18}/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث عن تحدٍّ..." aria-label="بحث عن تحدٍّ"/></div><div className={styles.filterChips}>{['الكل','النقل','السوق','المدرسة','الأعراس','المنزل'].map(t => <button key={t} className={tab === t ? styles.chipActive : styles.chip} onClick={() => setTab(t)}>{t}</button>)}</div></div>
+      <div className={styles.filters}><div className={styles.searchBox}><Search size={18}/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث عن تحدٍّ..." aria-label="بحث عن تحدٍّ"/></div><div className={styles.filterChips}>{['الكل', ...Array.from(new Set(challenges.map(c => c.topic)))].map(t => <button key={t} className={tab === t ? styles.chipActive : styles.chip} onClick={() => setTab(t)}>{t}</button>)}</div></div>
       <div className={styles.challengeGrid}>{filtered.map(c => <article className={styles.challengeCard} key={c.id}><div className={styles.challengeCardTop}><span className={styles.challengeEmoji}>{c.icon}</span><span className={c.level === 'سهل' ? styles.levelEasy : c.level === 'متوسط' ? styles.levelMedium : styles.levelHard}>{c.level}</span></div><span className={styles.topic}>{c.topic}</span><h3>{c.title}</h3><p>{c.desc}</p><div className={styles.cardMeta}><span><Award size={15}/>{c.points} نقطة</span><span><Clock3 size={15}/>{c.time}</span></div><a href="#try" className={styles.cardLink}>حلّ التحدّي <ArrowLeft size={15}/></a></article>)}</div>
       {filtered.length === 0 && <div className={styles.emptyState}>ما لقيناش تحديات بهذه الكلمات. جرّب بحثًا آخر.</div>}
     </section>

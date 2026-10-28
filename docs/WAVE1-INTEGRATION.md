@@ -6,7 +6,7 @@ The feature UI is available in a clearly labelled local demo mode. Authenticated
 ## Supabase setup
 1. Create a Supabase project and configure email OTP/magic links.
 2. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and server-only `SUPABASE_SERVICE_ROLE_KEY` in the deployment environment. Never expose the service-role key through a `NEXT_PUBLIC_` variable.
-3. Apply migrations in order: `0001_initial_schema.sql`, then `0002_wave1_learning_features.sql` through `0006_wave1_analytics.sql`.
+3. Apply migrations in order: `0001_initial_schema.sql`, then `0002_wave1_learning_features.sql` through `0007_fix_rollout_assignment.sql`.
 4. Configure the Supabase Auth redirect URL to include the deployed site origin.
 5. Verify the profile row is created for new auth users; the existing schema expects `profiles.id = auth.users.id`.
 6. Keep all `ff_*` flags disabled until the integration and acceptance checks below pass.

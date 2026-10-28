@@ -89,7 +89,7 @@ export default function Home() {
       <nav className={mobileMenu ? styles.navOpen : styles.nav}>
         <a className={styles.activeNav} href="#challenges">التحديات</a><a href="#how">كيف تعمل؟</a><a href="#league">دوري الأسبوع</a>
       </nav>
-      <div className={styles.topActions}><span className={styles.login}><AuthPanel /></span><a className={styles.startBtn} href="#try">جرّب مجانًا <ArrowLeft size={16}/></a></div>
+      <div className={styles.topActions}><AuthPanel /><a className={styles.startBtn} href="#try">جرّب مجانًا <ArrowLeft size={16}/></a></div>
       <button className={styles.menuBtn} onClick={() => setMobileMenu(!mobileMenu)} aria-label="فتح القائمة"><Menu/></button>
     </header>
 

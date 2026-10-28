@@ -1,11 +1,13 @@
-import { createClient, type User } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import type { NextRequest } from 'next/server';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export type ApiAuth = { user: User; admin: ReturnType<typeof createClient>; userClient: ReturnType<typeof createClient> };
+type ApiSupabaseClient = SupabaseClient<any, 'public', 'public', any, any>;
+
+export type ApiAuth = { user: User; admin: ApiSupabaseClient; userClient: ApiSupabaseClient };
 
 export async function requireApiUser(request: NextRequest): Promise<ApiAuth | Response> {
   if (!url || !anonKey || !serviceKey) {

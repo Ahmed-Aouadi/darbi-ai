@@ -142,7 +142,22 @@
       "وقت",
       "قوائم"
     ],
-    "reference_python": "def nextBus(now,times):\n    m=lambda s:int(s[:2])*60+int(s[3:])\n    n=m(now)\n    for t in times:\n        if m(t)>=n:return [t,m(t)-n]\n    return [times[0],1440-n+m(times[0])]\n"
+    "reference_python": "def nextBus(now,times):\n    m=lambda s:int(s[:2])*60+int(s[3:])\n    n=m(now)\n    for t in times:\n        if m(t)>=n:return [t,m(t)-n]\n    return [times[0],1440-n+m(times[0])]\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «أقرب حافلة»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "حوّل كل وقت إلى دقائق منذ منتصف الليل لتسهّل المقارنة.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام نصوص ووقت وقوائم، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "حوّل كل وقت إلى دقائق منذ منتصف الليل لتسهّل المقارنة.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "نصوص"
   },
   {
     "slug": "electricity-bill",
@@ -225,7 +240,22 @@
       "شروط",
       "حساب"
     ],
-    "reference_python": "def electricityBill(kwh):\n    return 50+min(kwh,125)*4+max(0,min(kwh,375)-125)*8+max(0,kwh-375)*12\n"
+    "reference_python": "def electricityBill(kwh):\n    return 50+min(kwh,125)*4+max(0,min(kwh,375)-125)*8+max(0,kwh-375)*12\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «فاتورة الكهرباء»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "احسب كل شريحة على حدة ثم اجمع.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام شروط وحساب، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "احسب كل شريحة على حدة ثم اجمع.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "شروط"
   },
   {
     "slug": "market-total",
@@ -346,7 +376,22 @@
       "قوائم",
       "حساب"
     ],
-    "reference_python": "def marketTotal(prices,threshold,percent):\n    total=sum(prices)\n    if total>=threshold:return total*(100-percent)//100\n    return total\n"
+    "reference_python": "def marketTotal(prices,threshold,percent):\n    total=sum(prices)\n    if total>=threshold:return total*(100-percent)//100\n    return total\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «ميزان السوق»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "استخدم القسمة الصحيحة: // في بايثون، وMath.floor في جافاسكربت.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام قوائم وحساب، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "استخدم القسمة الصحيحة: // في بايثون، وMath.floor في جافاسكربت.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "قوائم"
   },
   {
     "slug": "cashier-coins",
@@ -493,7 +538,22 @@
       "حلقات",
       "حساب"
     ],
-    "reference_python": "def coinChange(amount):\n    out=[]\n    for c in [100,50,20,10,5,2,1]:\n        out.append(amount//c);amount%=c\n    return out\n"
+    "reference_python": "def coinChange(amount):\n    out=[]\n    for c in [100,50,20,10,5,2,1]:\n        out.append(amount//c);amount%=c\n    return out\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «الصرّاف»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "ابدأ بأكبر فئة، وخذ أكبر عدد ممكن منها، ثم انتقل لما تبقّى.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام حلقات وحساب، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "ابدأ بأكبر فئة، وخذ أكبر عدد ممكن منها، ثم انتقل لما تبقّى.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "حلقات"
   },
   {
     "slug": "time-diff",
@@ -576,7 +636,22 @@
       "وقت",
       "نصوص"
     ],
-    "reference_python": "def timeDiff(a,b):\n    m=lambda s:int(s[:2])*60+int(s[3:])\n    return (m(b)-m(a))%1440\n"
+    "reference_python": "def timeDiff(a,b):\n    m=lambda s:int(s[:2])*60+int(s[3:])\n    return (m(b)-m(a))%1440\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «الفرق بين وقتين»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "إن كان b أقل من a فأضف 1440 دقيقة.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام وقت ونصوص، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "إن كان b أقل من a فأضف 1440 دقيقة.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "وقت"
   },
   {
     "slug": "attendance",
@@ -702,7 +777,22 @@
       "قوائم",
       "ترتيب"
     ],
-    "reference_python": "def absentees(everyone,present):\n    return sorted(n for n in everyone if n not in present)\n"
+    "reference_python": "def absentees(everyone,present):\n    return sorted(n for n in everyone if n not in present)\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «كشف الحضور»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "اختر الأسماء التي ليست في present ثم رتّب.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام قوائم وترتيب، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "اختر الأسماء التي ليست في present ثم رتّب.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "قوائم"
   },
   {
     "slug": "plate-wilaya",
@@ -825,7 +915,22 @@
       "نصوص",
       "قواميس"
     ],
-    "reference_python": "def wilayaOfPlate(plate,table):\n    return table.get(plate.split(\" \")[-1],\"غير معروف\")\n"
+    "reference_python": "def wilayaOfPlate(plate,table):\n    return table.get(plate.split(\" \")[-1],\"غير معروف\")\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «لوحة التسجيل»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "قسّم النص على المسافات وخذ آخر عنصر.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام نصوص وقواميس، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "قسّم النص على المسافات وخذ آخر عنصر.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "نصوص"
   },
   {
     "slug": "scout-patrols",
@@ -989,7 +1094,22 @@
       "قوائم",
       "حلقات"
     ],
-    "reference_python": "def splitPatrols(names,k):\n    out=[[] for _ in range(k)]\n    for i,n in enumerate(names):out[i%k].append(n)\n    return out\n"
+    "reference_python": "def splitPatrols(names,k):\n    out=[[] for _ in range(k)]\n    for i,n in enumerate(names):out[i%k].append(n)\n    return out\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «تقسيم الطلائع»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "استخدم باقي القسمة على k لتحديد الطليعة.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام قوائم وحلقات، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "استخدم باقي القسمة على k لتحديد الطليعة.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "قوائم"
   },
   {
     "slug": "semester-note",
@@ -1136,7 +1256,22 @@
       "حساب",
       "شروط"
     ],
-    "reference_python": "def semesterNote(grades):\n    s=sum(m*c for m,c in grades);cs=sum(c for m,c in grades)\n    if s>=16*cs:return \"ممتاز\"\n    if s>=14*cs:return \"جيد جدًا\"\n    if s>=12*cs:return \"جيد\"\n    if s>=10*cs:return \"مقبول\"\n    return \"ضعيف\"\n"
+    "reference_python": "def semesterNote(grades):\n    s=sum(m*c for m,c in grades);cs=sum(c for m,c in grades)\n    if s>=16*cs:return \"ممتاز\"\n    if s>=14*cs:return \"جيد جدًا\"\n    if s>=12*cs:return \"جيد\"\n    if s>=10*cs:return \"مقبول\"\n    return \"ضعيف\"\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «ملاحظة الفصل»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "قارن المجموع بـ 16 × مجموع المعاملات لتتجنب الكسور.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام حساب وشروط، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "قارن المجموع بـ 16 × مجموع المعاملات لتتجنب الكسور.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "حساب"
   },
   {
     "slug": "teacher-conflicts",
@@ -1306,7 +1441,22 @@
       "قوائم",
       "مجموعات"
     ],
-    "reference_python": "def teacherConflicts(slots):\n    seen={};bad=set()\n    for teacher,day,hour in slots:\n        key=(teacher,day,hour)\n        if key in seen:bad.add(teacher)\n        seen[key]=True\n    return sorted(bad)\n"
+    "reference_python": "def teacherConflicts(slots):\n    seen={};bad=set()\n    for teacher,day,hour in slots:\n        key=(teacher,day,hour)\n        if key in seen:bad.add(teacher)\n        seen[key]=True\n    return sorted(bad)\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «تعارض الأساتذة»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "احتفظ بمجموعة (set) للحصص التي رأيتها.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام قوائم ومجموعات، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "احتفظ بمجموعة (set) للحصص التي رأيتها.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "قوائم"
   },
   {
     "slug": "wedding-pots",
@@ -1405,7 +1555,22 @@
       "حساب",
       "تقريب"
     ],
-    "reference_python": "def weddingPots(guests,portion,capacity):\n    need=(guests*portion*110+99)//100\n    return (need+capacity-1)//capacity\n"
+    "reference_python": "def weddingPots(guests,portion,capacity):\n    need=(guests*portion*110+99)//100\n    return (need+capacity-1)//capacity\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «الوليمة»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "الكمية = (guests × portion × 110 + 99) ÷ 100 بقسمة صحيحة.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام حساب وتقريب، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "الكمية = (guests × portion × 110 + 99) ÷ 100 بقسمة صحيحة.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "حساب"
   },
   {
     "slug": "bus-peak",
@@ -1555,7 +1720,22 @@
       "حلقات",
       "حساب"
     ],
-    "reference_python": "def maxPassengers(stops):\n    now=best=0\n    for up,down in stops:\n        now+=up-down;best=max(best,now)\n    return best\n"
+    "reference_python": "def maxPassengers(stops):\n    now=best=0\n    for up,down in stops:\n        now+=up-down;best=max(best,now)\n    return best\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «ركّاب الحافلة»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "حافظ على عدّاد جارٍ وسجّل أكبر قيمة له.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام حلقات وحساب، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "حافظ على عدّاد جارٍ وسجّل أكبر قيمة له.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "حلقات"
   },
   {
     "slug": "darija-translate",
@@ -1680,7 +1860,22 @@
       "نصوص",
       "قواميس"
     ],
-    "reference_python": "def translateDarija(sentence,table):\n    return \" \".join(table.get(w,w) for w in sentence.split(\" \"))\n"
+    "reference_python": "def translateDarija(sentence,table):\n    return \" \".join(table.get(w,w) for w in sentence.split(\" \"))\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «ترجمان الدارجة»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "قسّم الجملة إلى كلمات، واستبدل، ثم اجمعها بمسافة.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام نصوص وقواميس، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "قسّم الجملة إلى كلمات، واستبدل، ثم اجمعها بمسافة.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "نصوص"
   },
   {
     "slug": "irrigation-turn",
@@ -1779,7 +1974,22 @@
       "حساب",
       "وقت"
     ],
-    "reference_python": "def nextIrrigation(startDay,interval,today):\n    if today<=startDay:return startDay-today\n    r=(today-startDay)%interval\n    return 0 if r==0 else interval-r\n"
+    "reference_python": "def nextIrrigation(startDay,interval,today):\n    if today<=startDay:return startDay-today\n    r=(today-startDay)%interval\n    return 0 if r==0 else interval-r\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «نوبة السقي»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "استخدم باقي القسمة على interval.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام حساب ووقت، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "استخدم باقي القسمة على interval.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "حساب"
   },
   {
     "slug": "taxi-fare",
@@ -1871,7 +2081,22 @@
       "شروط",
       "تقريب"
     ],
-    "reference_python": "def taxiFare(km,hour):\n    fare=100+40*km\n    if hour>=22 or hour<6:fare=(fare*125+99)//100\n    return (fare+9)//10*10\n"
+    "reference_python": "def taxiFare(km,hour):\n    fare=100+40*km\n    if hour>=22 or hour<6:fare=(fare*125+99)//100\n    return (fare+9)//10*10\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «عدّاد التاكسي»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "الزيادة: (الأجرة × 125 + 99) ÷ 100 بقسمة صحيحة.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام شروط وتقريب، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "الزيادة: (الأجرة × 125 + 99) ÷ 100 بقسمة صحيحة.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "شروط"
   },
   {
     "slug": "league-table",
@@ -2133,7 +2358,22 @@
       "ترتيب",
       "قواميس"
     ],
-    "reference_python": "def leagueTable(matches):\n    pts={};gd={}\n    for h,a,hg,ag in matches:\n        for t in (h,a):pts.setdefault(t,0);gd.setdefault(t,0)\n        gd[h]+=hg-ag;gd[a]+=ag-hg\n        if hg>ag:pts[h]+=3\n        elif hg<ag:pts[a]+=3\n        else:pts[h]+=1;pts[a]+=1\n    return [[t,pts[t]] for t in sorted(pts,key=lambda t:(-pts[t],-gd[t],t))]\n"
+    "reference_python": "def leagueTable(matches):\n    pts={};gd={}\n    for h,a,hg,ag in matches:\n        for t in (h,a):pts.setdefault(t,0);gd.setdefault(t,0)\n        gd[h]+=hg-ag;gd[a]+=ag-hg\n        if hg>ag:pts[h]+=3\n        elif hg<ag:pts[a]+=3\n        else:pts[h]+=1;pts[a]+=1\n    return [[t,pts[t]] for t in sorted(pts,key=lambda t:(-pts[t],-gd[t],t))]\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «ترتيب البطولة»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "احسب النقاط وفارق الأهداف في قاموسين ثم رتّب بمفتاح مركّب.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام ترتيب وقواميس، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "احسب النقاط وفارق الأهداف في قاموسين ثم رتّب بمفتاح مركّب.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "ترتيب"
   },
   {
     "slug": "date-boxes",
@@ -2249,7 +2489,22 @@
     "tags": [
       "برمجة ديناميكية"
     ],
-    "reference_python": "def minBoxes(kg,sizes):\n    INF=10**9;dp=[0]+[INF]*kg\n    for k in range(1,kg+1):\n        for s in sizes:\n            if s<=k and dp[k-s]+1<dp[k]:dp[k]=dp[k-s]+1\n    return -1 if dp[kg]>=INF else dp[kg]\n"
+    "reference_python": "def minBoxes(kg,sizes):\n    INF=10**9;dp=[0]+[INF]*kg\n    for k in range(1,kg+1):\n        for s in sizes:\n            if s<=k and dp[k-s]+1<dp[k]:dp[k]=dp[k-s]+1\n    return -1 if dp[kg]>=INF else dp[kg]\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «التمر والتعبئة»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "فكّر في برمجة ديناميكية: أقل عدد علب لكل وزن من 0 إلى kg.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام برمجة ديناميكية، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "فكّر في برمجة ديناميكية: أقل عدد علب لكل وزن من 0 إلى kg.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "برمجة ديناميكية"
   },
   {
     "slug": "shortest-route",
@@ -2425,7 +2680,22 @@
     "tags": [
       "رسوم بيانية"
     ],
-    "reference_python": "def shortestRoute(edges,start,end):\n    import heapq\n    g={}\n    for a,b,w in edges:\n        g.setdefault(a,[]).append((b,w));g.setdefault(b,[]).append((a,w))\n    if start not in g or end not in g:return 0 if start==end else -1\n    dist={start:0};pq=[(0,start)]\n    while pq:\n        d,u=heapq.heappop(pq)\n        if d>dist.get(u,10**9):continue\n        for v,w in g[u]:\n            if d+w<dist.get(v,10**9):dist[v]=d+w;heapq.heappush(pq,(d+w,v))\n    return dist.get(end,-1)\n"
+    "reference_python": "def shortestRoute(edges,start,end):\n    import heapq\n    g={}\n    for a,b,w in edges:\n        g.setdefault(a,[]).append((b,w));g.setdefault(b,[]).append((a,w))\n    if start not in g or end not in g:return 0 if start==end else -1\n    dist={start:0};pq=[(0,start)]\n    while pq:\n        d,u=heapq.heappop(pq)\n        if d>dist.get(u,10**9):continue\n        for v,w in g[u]:\n            if d+w<dist.get(v,10**9):dist[v]=d+w;heapq.heappush(pq,(d+w,v))\n    return dist.get(end,-1)\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «أقصر طريق بين الأحياء»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "خوارزمية ديكسترا (Dijkstra) باستخدام طابور أولويات.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام رسوم بيانية، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "خوارزمية ديكسترا (Dijkstra) باستخدام طابور أولويات.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "رسوم بيانية"
   },
   {
     "slug": "water-schedule",
@@ -2586,7 +2856,22 @@
     "tags": [
       "برمجة ديناميكية"
     ],
-    "reference_python": "def waterSchedule(hours,demands):\n    dp=[0]*(hours+1)\n    for h,p in demands:\n        for t in range(hours,h-1,-1):dp[t]=max(dp[t],dp[t-h]+p)\n    return dp[hours]\n"
+    "reference_python": "def waterSchedule(hours,demands):\n    dp=[0]*(hours+1)\n    for h,p in demands:\n        for t in range(hours,h-1,-1):dp[t]=max(dp[t],dp[t-h]+p)\n    return dp[hours]\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «توزيع المياه»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "مسألة حقيبة الظهر (Knapsack 0/1).",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام برمجة ديناميكية، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "مسألة حقيبة الظهر (Knapsack 0/1).",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "برمجة ديناميكية"
   },
   {
     "slug": "doctor-slots",
@@ -2791,6 +3076,21 @@
       "ترتيب",
       "قوائم"
     ],
-    "reference_python": "def mergeSlots(slots):\n    out=[]\n    for s,e in sorted(slots):\n        if out and s<=out[-1][1]:out[-1][1]=max(out[-1][1],e)\n        else:out.append([s,e])\n    return out\n"
+    "reference_python": "def mergeSlots(slots):\n    out=[]\n    for s,e in sorted(slots):\n        if out and s<=out[-1][1]:out[-1][1]=max(out[-1][1],e)\n        else:out.append([s,e])\n    return out\n",
+    "hints": [
+      "ابدأ بتحديد المدخلات والمخرجات في تحدي «مواعيد الطبيب»، واكتب مثالًا بسيطًا قبل البرمجة.",
+      "رتّب حسب البداية ثم مرّ على الفترات مرة واحدة.",
+      "عالج الحالات الخاصة أولًا، ثم نفّذ الفكرة الأساسية باستخدام ترتيب وقوائم، وأعد النتيجة بالصيغة المطلوبة."
+    ],
+    "editorial": {
+      "idea": "رتّب حسب البداية ثم مرّ على الفترات مرة واحدة.",
+      "steps": [
+        "حدّد شكل البيانات والنتيجة المطلوبة بدقة.",
+        "عالج الحالات الحدّية قبل الحالة العامة.",
+        "نفّذ الخوارزمية على مراحل ثم اختبر أكثر من مثال."
+      ],
+      "complexity": "تُحدّد حسب عدد عناصر المدخلات؛ تجنّب الحلقات المتداخلة إن لم تكن ضرورية."
+    },
+    "concept_tag": "ترتيب"
   }
 ]

@@ -237,3 +237,29 @@ grant execute on function public.admin_set_feature_flag(text, boolean, smallint)
 comment on table public.gem_ledger is 'Append-only source of truth for gem balance changes; writes only through trusted functions.';
 comment on column public.submissions.hint_level is 'Highest hint level opened for this submission (0-3); legacy hint_used remains unchanged.';
 comment on column public.challenges.editorial is 'Editorial content; never expose through the public challenge view before a successful solve.';
+
+
+-- Feature configuration is not secret; clients may read it to hide disabled UI.
+drop policy if exists feature_flags_runtime_read on public.feature_flags;
+create policy feature_flags_runtime_read on public.feature_flags for select using (true);
+
+-- Stable rollout assignment for a user; never use this for authorization decisions.
+create or replace function public.is_feature_enabled(p_key text, p_user_id uuid default auth.uid())
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select coalesce((
+    select enabled and (
+      rollout_percent = 100 or (
+        rollout_percent > 0 and
+        mod((('x' || substr(md5(coalesce(p_user_id::text, 'anonymous') || p_key), 1, 8))::bit(32)::bigint), 100) < rollout_percent
+      )
+    )
+    from public.feature_flags where key = p_key
+  ), false);
+$$;
+revoke all on function public.is_feature_enabled(text, uuid) from public;
+grant execute on function public.is_feature_enabled(text, uuid) to anon, authenticated;

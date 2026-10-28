@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "validate:content": "node scripts/validate-challenges.mjs",
-    "test:wave1": "node --test tests/wave1-core.test.mjs"
+    "test:wave1": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "next": "14.2.31",

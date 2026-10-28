@@ -25,9 +25,31 @@
     "water-schedule",
     "shortest-route"
   ],
-  "النصوص والعربية": [],
-  "أسس البرمجة": [],
-  "البيانات والتحليل": [],
-  "الخوارزميات الكلاسيكية": [],
-  "تحدّيات الصعب": []
+  "النصوص والعربية": [
+    "darija-translate",
+    "time-diff"
+  ],
+  "أسس البرمجة": [
+    "electricity-bill",
+    "cashier-coins",
+    "market-total",
+    "semester-note"
+  ],
+  "البيانات والتحليل": [
+    "league-table",
+    "bus-peak",
+    "teacher-conflicts"
+  ],
+  "الخوارزميات الكلاسيكية": [
+    "date-boxes",
+    "shortest-route",
+    "water-schedule",
+    "doctor-slots"
+  ],
+  "تحدّيات الصعب": [
+    "date-boxes",
+    "shortest-route",
+    "water-schedule",
+    "doctor-slots"
+  ]
 }

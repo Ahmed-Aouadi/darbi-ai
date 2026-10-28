@@ -14,14 +14,11 @@ const questTemplates = [
   { id: 'hintless', title: 'حلّ تحديًا دون تلميح', goal: 1, reward: 5 },
   { id: 'review', title: 'راجع تحديًا سابقًا', goal: 1, reward: 5 },
 ];
-const hintsFor = (challenge: Challenge) => {
-  const original = (challenge as any).hint || 'قسّم المسألة إلى خطوات صغيرة، ثم اختبر كل خطوة على مثال بسيط.';
-  return [
-    'ابدأ بتحديد شكل المدخلات والمخرجات، ثم اكتب مثالًا صغيرًا بيدك.',
-    original,
-    'اكتب الحل على مراحل: عالج الحالات الخاصة أولًا، ثم طبّق الفكرة الأساسية، وأخيرًا أعد النتيجة المطلوبة.',
-  ];
-};
+const hintsFor = (challenge: Challenge) => (challenge as any).hints || [
+  'ابدأ بتحديد شكل المدخلات والمخرجات، ثم اكتب مثالًا صغيرًا بيدك.',
+  (challenge as any).hint || 'قسّم المسألة إلى خطوات صغيرة، ثم اختبر كل خطوة على مثال بسيط.',
+  'اكتب الحل على مراحل: عالج الحالات الخاصة أولًا، ثم طبّق الفكرة الأساسية، وأخيرًا أعد النتيجة المطلوبة.',
+];
 const conceptFor = (challenge: Challenge) => ({
   title: challenge.topic,
   explanation: `الفكرة هنا هي تحويل مشكلة من الحياة اليومية إلى خطوات واضحة يمكن للحاسوب تنفيذها. في تحدي «${challenge.title}»، حدّد البيانات أولًا ثم اختر العملية المناسبة.`,
@@ -141,7 +138,7 @@ export default function Wave1Panel() {
         <div className={styles.cardTitle}><BookOpen /><h3>الشرح التحريري</h3></div>
         <p>يظهر بعد تسجيل الحل في هذه التجربة.</p>
         <button className={styles.secondary} disabled={!completed} onClick={() => setShowEditorial(!showEditorial)}>{showEditorial ? 'إخفاء الشرح' : 'افتح الشرح بعد الحل'}</button>
-        {showEditorial && <div className={styles.hintBox}><b>الفكرة</b><p>{hints[1]}</p><p>حلّل المدخلات، تعامل مع الحالات الحدّية، ثم اختبر النتيجة على الأمثلة المتاحة. لا تعتمد على المثال الواحد فقط.</p><pre>{challenge.reference_python || 'اكتب الحل على مراحل واختبر كل مرحلة.'}</pre></div>}
+        {showEditorial && <div className={styles.hintBox}><b>الفكرة</b><p>{(challenge as any).editorial?.idea || hints[1]}</p><ol>{((challenge as any).editorial?.steps || ['حدّد المدخلات.', 'عالج الحالات الحدّية.', 'اختبر النتيجة.']).map((step: string) => <li key={step}>{step}</li>)}</ol><p>{(challenge as any).editorial?.complexity || 'اختبر الحل على حالات مختلفة.'}</p><pre>{challenge.reference_python || 'اكتب الحل على مراحل واختبر كل مرحلة.'}</pre></div>}
       </article>
       <article className={styles.card}>
         <div className={styles.cardTitle}><Play /><h3>تشغيل مدخلاتك الخاصة</h3></div>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Award, BookOpen, Flame, Gem, Lightbulb, Play, RotateCcw, ShieldCheck, Sparkles, Target } from 'lucide-react';
 import challengeData from '../content/challenges.json';
 import styles from './wave1-panel.module.css';
+import { useAuth } from './auth-context';
 
 type Challenge = (typeof challengeData)[number];
 type SavedState = { gems: number; streak: number; freezes: number; solved: string[]; hints: Record<string, number>; reviewed: string[]; questDay: string; questClaims: string[] };
@@ -36,6 +37,10 @@ export default function Wave1Panel() {
   const [customCode, setCustomCode] = useState('');
   const [customRunning, setCustomRunning] = useState(false);
   const [notice, setNotice] = useState('');
+  const { session } = useAuth();
+  const [serverQuests, setServerQuests] = useState<any[]>([]);
+  const [serverFlags, setServerFlags] = useState<Record<string, boolean>>({});
+  const [serverStatus, setServerStatus] = useState('');
   const challenge = challengeData[selected] as Challenge;
   const hints = useMemo(() => hintsFor(challenge), [challenge]);
   const concept = useMemo(() => conceptFor(challenge), [challenge]);
@@ -53,6 +58,29 @@ export default function Wave1Panel() {
   useEffect(() => {
     if (state.questDay !== today) setState(previous => ({ ...previous, questDay: today, questClaims: [] }));
   }, [today, state.questDay]);
+  useEffect(() => {
+    if (!session?.access_token) { setServerQuests([]); setServerFlags({}); setServerStatus(''); return; }
+    const headers = { Authorization: `Bearer ${session.access_token}` };
+    let cancelled = false;
+    Promise.all([
+      fetch('/api/quests', { headers, cache: 'no-store' }).then(async response => ({ ok: response.ok, body: await response.json() })),
+      fetch('/api/features', { headers, cache: 'no-store' }).then(async response => ({ ok: response.ok, body: await response.json() })),
+    ]).then(([questsResponse, flagsResponse]) => {
+      if (cancelled) return;
+      if (questsResponse.ok) { setServerQuests(questsResponse.body.quests || []); setServerStatus('المهام المتزامنة مع الحساب متاحة.'); }
+      else setServerStatus(questsResponse.body.error || 'تعذّر الاتصال بمهام الحساب.');
+      if (flagsResponse.ok) setServerFlags(flagsResponse.body.flags || {});
+    }).catch(() => { if (!cancelled) setServerStatus('تعذّر الاتصال بالخادم؛ تستمر النسخة المحلية.'); });
+    return () => { cancelled = true; };
+  }, [session?.access_token]);
+  const claimServerQuest = async (questId: number) => {
+    if (!session?.access_token) return;
+    const response = await fetch('/api/quests', { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ questId }) });
+    const body = await response.json();
+    if (!response.ok) { setNotice(body.error || 'تعذّر استلام المكافأة.'); return; }
+    setNotice(`تم استلام المكافأة. رصيد الجواهر في الخادم: ${body.gems}`);
+    setServerQuests(previous => previous.map(item => item.quest_id === questId ? { ...item, claimed: true } : item));
+  };
 
   const completed = state.solved.includes(challenge.slug);
   const currentHint = state.hints[challenge.slug] || 0;

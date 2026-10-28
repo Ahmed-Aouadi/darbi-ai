@@ -19,6 +19,8 @@ const challenges = challengeData.map((challenge, index) => ({
   desc: challenge.story,
 }));
 
+const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\\u064B-\\u065F\\u0670]/g, '').replace(/\\u0640/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').toLowerCase();
+
 const starter = challengeData[0].starter.javascript;
 
 export default function Home() {
@@ -29,7 +31,7 @@ export default function Home() {
   const [solved, setSolved] = useState(false);
   const [runMessage, setRunMessage] = useState('');
   const [mobileMenu, setMobileMenu] = useState(false);
-  const filtered = useMemo(() => challenges.filter(c => (tab === 'الكل' || c.topic === tab) && (c.title + c.desc + c.topic).includes(search)), [tab, search]);
+  const filtered = useMemo(() => challenges.filter(c => (tab === 'الكل' || c.topic === tab) && normalizeSearch(c.title + c.desc + c.topic).includes(normalizeSearch(search))), [tab, search]);
   const runCode = () => {
     setRan(false);
     setSolved(false);

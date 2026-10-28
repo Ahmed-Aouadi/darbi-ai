@@ -12,13 +12,20 @@ if (!Array.isArray(challenges) || challenges.length !== 20) {
 }
 for (const [index, challenge] of (Array.isArray(challenges) ? challenges : []).entries()) {
   const where = `challenge[${index}]`;
-  for (const key of ["slug", "title", "topic", "level", "functionName", "starter", "tests", "reference_python"]) {
+  for (const key of ["slug", "title", "topic", "level", "functionName", "starter", "tests", "reference_python", "hints", "editorial", "concept_tag"]) {
     if (!(key in challenge)) errors.push(`${where}: missing ${key}`);
   }
   if (challenge.slug && slugs.has(challenge.slug)) errors.push(`${where}: duplicate slug ${challenge.slug}`);
   if (challenge.slug) slugs.add(challenge.slug);
   if (!["easy", "medium", "hard"].includes(challenge.level)) errors.push(`${where}: invalid level ${challenge.level}`);
   if (!Array.isArray(challenge.tests) || challenge.tests.length === 0) errors.push(`${where}: tests must be a non-empty array`);
+  if (!Array.isArray(challenge.hints) || challenge.hints.length !== 3 || challenge.hints.some((hint) => typeof hint !== "string" || !hint.trim())) {
+    errors.push(`${where}: hints must contain exactly three non-empty levels`);
+  }
+  if (!challenge.editorial || typeof challenge.editorial !== "object" || typeof challenge.editorial.idea !== "string" || !Array.isArray(challenge.editorial.steps)) {
+    errors.push(`${where}: editorial must include idea and steps`);
+  }
+  if (typeof challenge.concept_tag !== "string" || !challenge.concept_tag.trim()) errors.push(`${where}: concept_tag must be a non-empty string`);
   for (const [testIndex, test] of (challenge.tests || []).entries()) {
     if (!Array.isArray(test.args) || !("expected" in test) || typeof test.hidden !== "boolean") {
       errors.push(`${where}.tests[${testIndex}]: expected args, expected, and boolean hidden`);

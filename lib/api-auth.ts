@@ -5,7 +5,7 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export type ApiAuth = { user: User; admin: ReturnType<typeof createClient> };
+export type ApiAuth = { user: User; admin: ReturnType<typeof createClient>; userClient: ReturnType<typeof createClient> };
 
 export async function requireApiUser(request: NextRequest): Promise<ApiAuth | Response> {
   if (!url || !anonKey || !serviceKey) {
@@ -21,10 +21,10 @@ export async function requireApiUser(request: NextRequest): Promise<ApiAuth | Re
   const { data, error } = await authClient.auth.getUser(token);
   if (error || !data.user) return Response.json({ error: 'جلسة غير صالحة أو منتهية.' }, { status: 401 });
 
-  const admin = createClient(url, serviceKey, {
+  const userClient = createClient(url, anonKey, {\n    global: { headers: { Authorization: `Bearer ${token}` } },\n    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },\n  });\n  const admin = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
-  return { user: data.user, admin };
+  return { user: data.user, admin, userClient };
 }
 
 export function isApiAuth(value: ApiAuth | Response): value is ApiAuth {

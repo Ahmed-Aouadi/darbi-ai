@@ -6,6 +6,8 @@ export const runtime = 'nodejs';
 export async function GET(request: NextRequest) {
   const auth = await requireApiUser(request);
   if (!isApiAuth(auth)) return auth;
+  const { data: enabled, error: flagError } = await auth.userClient.rpc('is_feature_enabled', { p_key: 'ff_quests', p_user_id: auth.user.id });
+  if (flagError || !enabled) return Response.json({ error: 'المهمات غير مفعّلة لهذا الحساب.' }, { status: 404 });
   const { error: assignError } = await auth.userClient.rpc('ensure_daily_quests');
   if (assignError) return Response.json({ error: 'تعذّر تحميل مهام اليوم.' }, { status: 500 });
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Algiers', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());

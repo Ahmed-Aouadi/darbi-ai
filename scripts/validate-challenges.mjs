@@ -7,8 +7,8 @@ const tracks = JSON.parse(fs.readFileSync(path.join(root, "content/tracks.json")
 const errors = [];
 const slugs = new Set();
 
-if (!Array.isArray(challenges) || challenges.length !== 20) {
-  errors.push(`Expected exactly 20 challenges; received ${Array.isArray(challenges) ? challenges.length : "non-array"}.`);
+if (!Array.isArray(challenges) || challenges.length < 20) {
+  errors.push(`Expected at least 20 challenges; received ${Array.isArray(challenges) ? challenges.length : "non-array"}.`);
 }
 for (const [index, challenge] of (Array.isArray(challenges) ? challenges : []).entries()) {
   const where = `challenge[${index}]`;
@@ -26,6 +26,14 @@ for (const [index, challenge] of (Array.isArray(challenges) ? challenges : []).e
     errors.push(`${where}: editorial must include idea and steps`);
   }
   if (typeof challenge.concept_tag !== "string" || !challenge.concept_tag.trim()) errors.push(`${where}: concept_tag must be a non-empty string`);
+  if (Array.isArray(challenge.tests)) {
+    if (challenge.tests.length < 6) errors.push(`${where}: needs at least 6 tests (found ${challenge.tests.length})`);
+    const hiddenCount = challenge.tests.filter((t) => t.hidden === true).length;
+    if (hiddenCount < 2) errors.push(`${where}: needs at least 2 hidden tests (found ${hiddenCount})`);
+    if (challenge.tests.length - hiddenCount < 1) errors.push(`${where}: needs at least 1 visible test`);
+    const seen = new Set(challenge.tests.map((t) => JSON.stringify(t.args)));
+    if (seen.size !== challenge.tests.length) errors.push(`${where}: duplicate test inputs`);
+  }
   for (const [testIndex, test] of (challenge.tests || []).entries()) {
     if (!Array.isArray(test.args) || !("expected" in test) || typeof test.hidden !== "boolean") {
       errors.push(`${where}.tests[${testIndex}]: expected args, expected, and boolean hidden`);

@@ -1,21 +1,22 @@
 {
   "name": "darbi-ai",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "validate:content": "node scripts/validate-challenges.mjs",
-    "test:wave1": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm run validate:content && npm test && npm run typecheck && npm run lint"
   },
   "dependencies": {
     "next": "14.2.31",
     "react": "^18",
     "react-dom": "^18",
     "lucide-react": "^0.468.0",
-    "pdfjs-dist": "^4.10.38",
     "@supabase/supabase-js": "^2.57.0"
   },
   "devDependencies": {
@@ -25,5 +26,9 @@
     "typescript": "^5",
     "eslint": "^8",
     "eslint-config-next": "14.2.31"
+  },
+  "description": "سَطر — منصة تحديات برمجية عربية من واقع الحياة (Next.js + Supabase)",
+  "engines": {
+    "node": ">=18.17"
   }
 }

@@ -8,7 +8,6 @@ import tracksRaw from '../content/tracks.json';
 import { toCard, toProgressChallenge, toPublicChallenge } from './challenges-public.mjs';
 import type { ChallengeCardData, ProgressChallenge, PublicChallenge } from './types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const all = raw as unknown as Array<Record<string, any>>;
 
 export const getChallenges = (): PublicChallenge[] => all.map(toPublicChallenge) as PublicChallenge[];
